@@ -41,6 +41,15 @@ export const Header: FC<HeaderProps> = ({
   const [shareOpen, setShareOpen] = useState(false);
   const url = typeof window !== "undefined" ? window.location.href : "";
 
+  // Compute share URL for public tree view
+  let shareUrl = url;
+  if (viewOnly && url && /\/trees\/[\w-]+(?!\/public$)/.test(url)) {
+    // If on a /trees/[id] page but not already /public, append /public
+    if (!url.endsWith("/public")) {
+      shareUrl = url.replace(/(\/trees\/[\w-]+)(\/public)?$/, "$1/public");
+    }
+  }
+
   const handleSignOut = async () => {
     await logout();
     router.push("/auth/signin");
@@ -69,7 +78,7 @@ export const Header: FC<HeaderProps> = ({
             <ShareDialog
               open={shareOpen}
               onClose={setShareOpen}
-              url={url}
+              url={shareUrl}
               trigger={
                 <Button
                   variant="outline"
@@ -246,9 +255,9 @@ export const Header: FC<HeaderProps> = ({
           <ShareDialog
             open={shareOpen}
             onClose={setShareOpen}
-            url={url}
+            url={shareUrl}
+            trigger={null}
             onOpen={onShareOpen}
-            // No trigger, controlled by state
           />
         )}
       </div>

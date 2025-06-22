@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Popover,
   PopoverContent,
@@ -12,14 +12,12 @@ import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle,
   SheetClose,
 } from "@/components/ui/sheet";
 
-// Simple mobile detection hook
 function useIsMobile() {
-  const [isMobile, setIsMobile] = React.useState(false);
-  React.useEffect(() => {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 640);
     check();
     window.addEventListener("resize", check);
@@ -28,29 +26,20 @@ function useIsMobile() {
   return isMobile;
 }
 
-interface ShareDialogProps {
-  open: boolean;
-  onClose: (open: boolean) => void;
-  url: string;
-  trigger?: React.ReactNode;
-  onOpen?: () => void;
-}
-
-function QRSVG({ value, size = 160 }: { value: string; size?: number }) {
+const QRSVG = ({ value, size = 160 }) => {
   const qr = new QR(value);
-  const cells = qr.modules;
-  if (!cells) return null;
+  const cells = qr.modules || [];
   const cellSize = size / cells.length;
   return (
     <svg
       width={size}
       height={size}
       viewBox={`0 0 ${size} ${size}`}
-      className="rounded-xl border shadow-md bg-white"
+      className="rounded-lg"
     >
       <rect width={size} height={size} fill="#fff" />
-      {cells.map((row: any, rIdx: number) =>
-        row.map((cell: any, cIdx: number) =>
+      {cells.flatMap((row, rIdx) =>
+        row.map((cell, cIdx) =>
           cell ? (
             <rect
               key={`${rIdx}-${cIdx}`}
@@ -65,22 +54,14 @@ function QRSVG({ value, size = 160 }: { value: string; size?: number }) {
       )}
     </svg>
   );
-}
+};
 
-const ShareDialog: React.FC<ShareDialogProps> = ({
-  open,
-  onClose,
-  url,
-  trigger,
-  onOpen,
-}) => {
-  const [copied, setCopied] = React.useState(false);
+const ShareDialog = ({ open, onClose, url, trigger, onOpen }) => {
+  const [copied, setCopied] = useState(false);
   const isMobile = useIsMobile();
-
   useEffect(() => {
     if (open && onOpen) onOpen();
   }, [open, onOpen]);
-
   const handleCopy = async () => {
     await navigator.clipboard.writeText(url);
     setCopied(true);
@@ -88,82 +69,81 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
   };
 
   const shareText = encodeURIComponent("Check out this family tree!");
-  const shareUrl = encodeURIComponent(url);
 
   const content = (
-    <div className="flex flex-col items-center gap-5 rounded-2xl shadow-2xl border bg-background font-sans">
-      <div className="flex items-center gap-2 mb-2">
-        <Share2 className="w-6 h-6 text-bright-green" />
-        <span className="font-bold text-xl tracking-tight">
-          Share this tree
-        </span>
+    <div className="bg-white dark:bg-gray-950 rounded-2xl dark:border-gray-800 overflow-hidden">
+      <div className="flex items-center gap-2 p-4 border-b border-gray-100 dark:border-gray-800 bg-gradient-to-r from-green-50 to-white dark:from-gray-900 dark:to-gray-950">
+        <Share2 className="w-5 h-5 text-green-600" />
+        <span className="font-bold text-lg">Share this Tree</span>
       </div>
-      <div className="flex flex-col items-center w-full">
-        <div className="mb-3 p-2 rounded-xl bg-gray-50 border shadow-inner">
-          <QRSVG value={url} size={140} />
+      <div className="p-4 flex flex-col items-center">
+        <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-inner">
+          <QRSVG value={url} size={isMobile ? 120 : 160} />
         </div>
-        <div className="flex items-center gap-2 w-full mt-2">
+        <div className="flex flex-col sm:flex-row mt-3 w-full gap-2 items-center">
           <input
-            type="text"
             value={url}
             readOnly
-            className="flex-1 px-2 py-1 rounded border text-xs bg-gray-100 font-mono"
+            className="flex-1 text-xs rounded border border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800 font-mono"
           />
           <Button
-            size="icon"
             variant="outline"
             onClick={handleCopy}
-            title="Copy link"
-            className="border-bright-green"
+            className="w-full sm:w-auto flex items-center justify-center gap-1"
           >
-            <Copy className="w-4 h-4 text-bright-green" />
+            <Copy className="w-4 h-4 text-green-600" />
+            {copied ? "Copied!" : "Copy Link"}
           </Button>
-          {copied && (
-            <span className="text-green-600 text-xs ml-1">Copied!</span>
-          )}
         </div>
       </div>
-      <div className="w-full border-t my-3" />
-      <div className="w-full flex flex-col items-center gap-1">
-        <span className="text-xs text-muted-foreground mb-1">Share via</span>
-        <div className="flex gap-4 justify-center">
-          <a
-            href={`https://twitter.com/intent/tweet?text=${shareText}&url=${shareUrl}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-            title="Share on Twitter"
-          >
-            <Icons.twitter className="w-8 h-8 text-[#1DA1F2] group-hover:scale-110 transition-transform" />
-            <span className="text-xs mt-1 font-medium text-[#1DA1F2]">
-              Twitter
-            </span>
-          </a>
-          <a
-            href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-            title="Share on Facebook"
-          >
-            <Icons.facebook className="w-8 h-8 text-[#1877F3] group-hover:scale-110 transition-transform" />
-            <span className="text-xs mt-1 font-medium text-[#1877F3]">
-              Facebook
-            </span>
-          </a>
-          <a
-            href={`https://wa.me/?text=${shareText}%20${shareUrl}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="flex flex-col items-center group"
-            title="Share on WhatsApp"
-          >
-            <Icons.whatsapp className="w-8 h-8 text-[#25D366] group-hover:scale-110 transition-transform" />
-            <span className="text-xs mt-1 font-medium text-[#25D366]">
-              WhatsApp
-            </span>
-          </a>
+      <div className="border-t border-gray-100 dark:border-gray-800 my-2" />
+      <div className="px-4 flex flex-col items-center gap-1">
+        <span className="text-xs text-gray-500">Share via</span>
+        <div className="flex justify-center gap-3">
+          {[
+            {
+              icon: Icons.twitter,
+              color: "#1DA1F2",
+              url: `https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(
+                url
+              )}`,
+              label: "Twitter",
+            },
+            {
+              icon: Icons.facebook,
+              color: "#1877F3",
+              url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                url
+              )}`,
+              label: "Facebook",
+            },
+            {
+              icon: Icons.whatsapp,
+              color: "#25D366",
+              url: `https://wa.me/?text=${shareText}%20${encodeURIComponent(
+                url
+              )}`,
+              label: "WhatsApp",
+            },
+          ].map((item) => (
+            <a
+              key={item.label}
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center group focus:outline-none focus:ring-2 rounded p-1"
+              title={`Share on ${item.label}`}
+            >
+              <item.icon className="w-8 h-8" style={{ color: item.color }} />
+              <span className="text-[10px] mt-1" style={{ color: item.color }}>
+                {item.label}
+              </span>
+            </a>
+          ))}
         </div>
+      </div>
+      <div className="text-center text-[10px] text-gray-500 dark:text-gray-400 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900">
+        Anyone with this link can view this tree.
       </div>
     </div>
   );
@@ -171,12 +151,11 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
   if (isMobile) {
     return (
       <Sheet open={open} onOpenChange={onClose}>
-        <SheetContent side="right" className="max-w-sm w-full p-6">
-          <SheetHeader>
-          </SheetHeader>
+        <SheetContent side="right" className="max-w-sm w-full p-4">
+          <SheetHeader></SheetHeader>
           {content}
           <SheetClose asChild>
-            <Button variant="outline" className="mt-6 w-full">
+            <Button variant="outline" className="mt-4 w-full">
               Close
             </Button>
           </SheetClose>
@@ -186,9 +165,9 @@ const ShareDialog: React.FC<ShareDialogProps> = ({
   }
 
   return (
-    <Popover open={open} onOpenChange={onClose}>
-      {trigger ? <PopoverTrigger asChild>{trigger}</PopoverTrigger> : null}
-      <PopoverContent className="max-w-sm w-full p-6 flex flex-col items-center gap-5 rounded-2xl shadow-2xl border bg-background font-sans">
+    <Popover>
+      {trigger && <PopoverTrigger asChild>{trigger}</PopoverTrigger>}
+      <PopoverContent className="p-4 rounded-2xl border bg-background max-w-sm w-full">
         {content}
       </PopoverContent>
     </Popover>
