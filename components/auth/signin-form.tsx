@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Icons } from "@/components/icons";
 import { ButtonLoader } from "@/components/ui/loader";
 import { FirebaseError } from "firebase/app";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const signInSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -26,7 +27,7 @@ const signInSchema = z.object({
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 export default function SignInForm() {
-  const { signIn, signInWithGoogle } = useAuth();
+  const { signIn, signInWithGoogle, userProfile, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -93,12 +94,48 @@ export default function SignInForm() {
     }
   };
 
-  const { userProfile, loading } = useAuth();
   useEffect(() => {
     if (!loading && userProfile) {
       router.push("/user-profile");
     }
-  }, [userProfile, loading]);
+  }, [userProfile, loading, router]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-10" />
+          </div>
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+            <Skeleton className="h-10" />
+          </div>
+          <Skeleton className="h-10 w-full" />
+        </div>
+
+        <div className="flex items-center">
+          <Separator className="flex-1" />
+          <span className="mx-2 text-xs text-slate-500 dark:text-slate-400">
+            OR
+          </span>
+          <Separator className="flex-1" />
+        </div>
+
+        <div className="space-y-3">
+          <Skeleton className="h-10 w-full" />
+        </div>
+
+        <div className="text-center">
+          <Skeleton className="mx-auto h-5 w-48" />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

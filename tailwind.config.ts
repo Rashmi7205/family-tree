@@ -1,4 +1,5 @@
 import type { Config } from "tailwindcss";
+const { fontFamily } = require("tailwindcss/defaultTheme");
 
 const config: Config = {
   darkMode: ["class"],
@@ -10,6 +11,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ["Poppins", ...fontFamily.sans],
+      },
       strokeWidth: {
         3: "3",
       },
@@ -73,6 +77,14 @@ const config: Config = {
         sm: "calc(var(--radius) - 4px)",
       },
       keyframes: {
+        grid: {
+          "0%": {
+            transform: "translateY(-50%)",
+          },
+          "100%": {
+            transform: "translateY(0)",
+          },
+        },
         "accordion-down": {
           from: {
             height: "0",
@@ -91,6 +103,7 @@ const config: Config = {
         },
       },
       animation: {
+        grid: "grid 10s linear infinite",
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
       },
