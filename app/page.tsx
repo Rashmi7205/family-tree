@@ -1,11 +1,12 @@
 "use client";
-import { HomeNavBar } from "@/components/Home/Header";
+
 import { HeroSectionInner } from "@/components/Home/HeroSectionInner";
 import { Features } from "@/components/blocks/features-2";
 import Members from "@/components/Home/Members";
 import About from "@/components/Home/About";
 import CTA from "@/components/Home/CTA";
 import Footer from "@/components/Home/Footer";
+import { HomeNavBar } from "@/components/Home/Header";
 
 const Index = () => {
   return (

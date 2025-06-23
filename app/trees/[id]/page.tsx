@@ -34,7 +34,7 @@ import {
 import * as htmlToImage from "html-to-image";
 import ExportPoster from "@/components/family-tree/ExportPoster";
 import { useAuth } from "@/lib/auth/auth-context";
-import ShareDialog from "@/components/family-tree-viewer/ShareDialog";
+import { ShareDialog } from "@/components/family-tree-viewer/ShareDialog";
 
 const malePalette = {
   // Blue shades similar to ADC4FF

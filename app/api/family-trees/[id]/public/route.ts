@@ -1,8 +1,9 @@
 import { type NextRequest, NextResponse } from "next/server";
 import connectDB from "@/lib/mongodb";
-import FamilyTree from "@/models/FamilyTree";
-import Member from "@/models/Member";
-import Relationship from "@/models/Relationship";
+import FamilyTree, { IFamilyTree } from "@/models/FamilyTree";
+import Member, { IMember } from "@/models/Member";
+import Relationship, { IRelationship } from "@/models/Relationship";
+import mongoose from "mongoose";
 
 export async function GET(
   request: NextRequest,
@@ -10,31 +11,31 @@ export async function GET(
 ) {
   try {
     await connectDB();
-
-    const tree = await FamilyTree.findOne({
-      _id: params.id,
-      isPublic: true,
-    }).lean();
-
+    let tree: IFamilyTree | null = null;
+    if (mongoose.Types.ObjectId.isValid(params.id)) {
+      tree = await FamilyTree.findOne({
+        _id: new mongoose.Types.ObjectId(params.id),
+        isPublic: true,
+      }).lean<IFamilyTree>();
+    }
     if (!tree) {
       return NextResponse.json(
         { error: "Family tree not found or not public" },
         { status: 404 }
       );
     }
-
     // Get members and relationships
-    const members = await Member.find({ familyTreeId: params.id }).lean();
+    const members = await Member.find({ familyTreeId: params.id }).lean<
+      IMember[]
+    >();
     const relationships = await Relationship.find({
       familyTreeId: params.id,
-    }).lean();
-
+    }).lean<IRelationship[]>();
     // Populate relationship members
     const populatedRelationships = await Promise.all(
       relationships.map(async (rel) => {
-        const member1 = await Member.findById(rel.member1Id).lean();
-        const member2 = await Member.findById(rel.member2Id).lean();
-
+        const member1 = await Member.findById(rel.member1Id).lean<IMember>();
+        const member2 = await Member.findById(rel.member2Id).lean<IMember>();
         return {
           ...rel,
           id: rel._id.toString(),
@@ -43,14 +44,12 @@ export async function GET(
         };
       })
     );
-
     const result = {
       ...tree,
       id: tree._id.toString(),
       members: members.map((m) => ({ ...m, id: m._id.toString() })),
       relationships: populatedRelationships,
     };
-
     return NextResponse.json(result);
   } catch (error) {
     console.error("Get public family tree error:", error);

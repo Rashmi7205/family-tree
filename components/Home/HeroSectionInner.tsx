@@ -80,7 +80,7 @@ const HeroSectionInner = React.forwardRef<
     ref
   ) => {
     return (
-      <div className={cn("relative", className)} ref={ref} {...props}>
+      <div className={cn("relative md:pt-24", className)} ref={ref} {...props}>
         <div className="absolute top-0 z-[0] h-screen w-screen bg-purple-950/10 dark:bg-purple-950/10 bg-[radial-gradient(ellipse_20%_80%_at_50%_-20%,rgba(120,119,198,0.15),rgba(255,255,255,0))] dark:bg-[radial-gradient(ellipse_20%_80%_at_50%_-20%,rgba(120,119,198,0.3),rgba(255,255,255,0))]" />
         <section className="relative max-w-full mx-auto z-1">
           <RetroGrid {...gridOptions} />
@@ -99,7 +99,7 @@ const HeroSectionInner = React.forwardRef<
               <p className="max-w-xl md:max-w-3xl mx-auto text-base md:text-lg text-muted-foreground">
                 {description}
               </p>
-              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4">
+              <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-4 z-99">
                 <span className="relative inline-block overflow-hidden rounded-full p-[1.5px] w-full sm:w-auto">
                   <span className="absolute inset-[-1000%] animate-[spin_2s_linear_infinite] bg-[conic-gradient(from_90deg_at_50%_50%,#E2CBFF_0%,#393BB2_50%,#E2CBFF_100%)]" />
                   <div className="inline-flex h-full w-full cursor-pointer items-center justify-center rounded-full bg-white dark:bg-gray-950 text-xs font-medium backdrop-blur-3xl">

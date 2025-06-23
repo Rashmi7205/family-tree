@@ -55,7 +55,7 @@ interface TreeCardProps {
   tree: FamilyTree;
   onEdit?: (tree: FamilyTree) => void;
   onDelete?: (treeId: string) => void;
-  onShare?: (tree: FamilyTree) => void;
+  onShare?: () => void;
 }
 
 export function TreeCard({ tree, onEdit, onDelete, onShare }: TreeCardProps) {
@@ -70,7 +70,7 @@ export function TreeCard({ tree, onEdit, onDelete, onShare }: TreeCardProps) {
 
   const handleShare = async () => {
     if (onShare) {
-      onShare(tree);
+      onShare();
     } else {
       const shareUrl = `${window.location.origin}/public/${tree.shareLink}`;
       if (navigator.share) {
@@ -231,7 +231,12 @@ export function TreeCard({ tree, onEdit, onDelete, onShare }: TreeCardProps) {
                 View Tree
               </Button>
             </Link>
-            <Button variant="outline" size="icon" onClick={handleShare}>
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={onShare}
+              aria-label="Share Tree"
+            >
               <Share2 className="h-4 w-4" />
             </Button>
           </div>
