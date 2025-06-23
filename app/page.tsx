@@ -23,7 +23,6 @@ const Index = () => {
       />
       <div className="bg-gray-50 dark:bg-black">
         <Features />
-        <Members />
         <About />
         <CTA />
       </div>

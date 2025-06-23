@@ -10,7 +10,7 @@ import SearchComponent from "./SearchComponent";
     }}
     description="Connect with your ancestors, build comprehensive family trees, and preserve your family's legacy for future generations through our advanced genealogy platform."
     ctaText="Start Your Journey"
-    ctaHref="#features"
+    ctaHref="/trees"
     bottomImage={{
       light: "/assets/light-view.png",
       dark: "/assets/dark-view.png",

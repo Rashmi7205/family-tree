@@ -14,6 +14,27 @@ const config: Config = {
       fontFamily: {
         sans: ["Poppins", ...fontFamily.sans],
       },
+      fontWeight: {
+        normal: 400,
+        medium: 500,
+        semibold: 600,
+        bold: 700,
+      },
+      fontSize: {
+        h1: ["32px", { lineHeight: "1.25", fontWeight: "600" }],
+        h2: ["24px", { lineHeight: "1.3", fontWeight: "600" }],
+        h3: ["20px", { lineHeight: "1.3", fontWeight: "600" }],
+        h4: ["18px", { lineHeight: "1.3", fontWeight: "600" }],
+        h5: ["18px", { lineHeight: "1.3", fontWeight: "600" }],
+        body: ["16px", { lineHeight: "1.5", fontWeight: "400" }],
+        bodym: ["14px", { lineHeight: "1.5", fontWeight: "400" }],
+        bodys: ["12px", { lineHeight: "1.5", fontWeight: "400" }],
+        placeholder: ["14px", { lineHeight: "1.5", fontWeight: "400" }],
+      },
+      spacing: {
+        1: "8px",
+        2: "16px",
+      },
       strokeWidth: {
         3: "3",
       },
