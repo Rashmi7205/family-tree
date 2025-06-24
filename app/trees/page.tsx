@@ -16,15 +16,13 @@ import {
   Search,
   Filter,
   TreePine,
-  Users,
-  Globe,
-  Lock,
   BarChart3,
   ArrowLeft,
   Grid3X3,
   List,
   Copy,
   Share2,
+  CalendarDays,
 } from "lucide-react";
 import {
   Select,
@@ -65,6 +63,9 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Loader } from "@/components/ui/loader";
 import QR from "qr.js";
+import EventCalendar from "@/components/EventCalendar";
+import { Label } from "@/components/ui/label";
+import { StatCard } from "@/components/dashboard/stat-card";
 
 interface FamilyTree {
   id: string;
@@ -83,6 +84,28 @@ interface FamilyTree {
 type SortOption = "name" | "created" | "updated" | "members";
 type FilterOption = "all" | "public" | "private";
 type ViewMode = "grid" | "list";
+
+interface Statistics {
+  totalMembers: number;
+  totalRelationships: number;
+  publicTrees: number;
+  privateTrees: number;
+}
+
+const getStatistics = (trees: FamilyTree[]): Statistics => {
+  const totalMembers = trees.reduce(
+    (sum, tree) => sum + tree._count.members,
+    0
+  );
+  const totalRelationships = trees.reduce(
+    (sum, tree) => sum + tree._count.relationships,
+    0
+  );
+  const publicTrees = trees.filter((tree) => tree.isPublic).length;
+  const privateTrees = trees.filter((tree) => !tree.isPublic).length;
+
+  return { totalMembers, totalRelationships, publicTrees, privateTrees };
+};
 
 // Add ShareTreeDialog component
 function ShareTreeDialog({
@@ -218,6 +241,317 @@ function ShareTreeDialog({
   );
 }
 
+// --- DashboardHeader ---
+function DashboardHeader({
+  onNewTree,
+  onResetView,
+}: {
+  onNewTree: () => void;
+  onResetView: () => void;
+}) {
+  const router = useRouter();
+  return (
+    <Header
+      treeName="My Family Trees"
+      extraActions={
+        <Button onClick={onNewTree}>
+          <Plus className="h-4 w-4 mr-2" />
+          New Tree
+        </Button>
+      }
+      showProfile={true}
+      onResetView={onResetView}
+    />
+  );
+}
+
+// --- StatsAndCalendarSection ---
+function StatsAndCalendarSection({
+  stats,
+  treesLength,
+}: {
+  stats: Statistics;
+  treesLength: number;
+}) {
+  return (
+    <div className="w-full flex flex-col gap-4 md:gap-6 mb-6">
+      <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+        {/* Stats Cards in a Card */}
+        <div className="flex-1">
+          <Card className="h-full flex flex-col justify-center rounded-2xl shadow-sm">
+            <CardContent className="h-full flex flex-col justify-center items-center p-3 md:p-6">
+                <h3>Your Tree Stats</h3>
+              <div className="grid grid-cols-2 gap-2 md:gap-4 h-full items-center justify-center">
+                <StatCard
+                  label="Total Trees"
+                  value={treesLength}
+                  imageSrc="/assets/tree.png"
+                  variant="green"
+                  height={80}
+                  imageSize={24}
+                  padding="p-2"
+                />
+                <StatCard
+                  label="Family Members"
+                  value={stats.totalMembers}
+                  imageSrc="/assets/member.png"
+                  variant="blue"
+                  height={80}
+                  imageSize={24}
+                  padding="p-2"
+                />
+                <StatCard
+                  label="Public Trees"
+                  value={stats.publicTrees}
+                  imageSrc="/assets/family-tree.png"
+                  variant="purple"
+                  height={80}
+                  imageSize={24}
+                  padding="p-2"
+                />
+                <StatCard
+                  label="Private Trees"
+                  value={stats.privateTrees}
+                  imageSrc="/assets/secure.png"
+                  variant="gray"
+                  height={80}
+                  imageSize={24}
+                  padding="p-2"
+                />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        {/* Event Calendar in a Card */}
+        <div className="flex-1">
+          <EventCalendar />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// --- FiltersSection ---
+function FiltersSection({
+  searchTerm,
+  setSearchTerm,
+  filterBy,
+  setFilterBy,
+  sortBy,
+  setSortBy,
+  viewMode,
+  setViewMode,
+  activeFilters,
+  clearFilters,
+}: {
+  searchTerm: string;
+  setSearchTerm: (v: string) => void;
+  filterBy: FilterOption;
+  setFilterBy: (v: FilterOption) => void;
+  sortBy: SortOption;
+  setSortBy: (v: SortOption) => void;
+  viewMode: ViewMode;
+  setViewMode: (v: ViewMode) => void;
+  activeFilters: React.ReactNode[];
+  clearFilters: () => void;
+}) {
+  return (
+    <Card className="mb-4 md:mb-6">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
+          <Filter className="h-5 w-5 sm:h-6 sm:w-6" />
+          Filter & Search
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="flex flex-col gap-3 md:gap-4 md:flex-row">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+              <Input
+                placeholder="Search family trees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 text-sm sm:text-base"
+              />
+            </div>
+          </div>
+
+          <Select value={filterBy} onValueChange={setFilterBy}>
+            <SelectTrigger className="w-full md:w-40 text-sm sm:text-base">
+              <SelectValue placeholder="Filter by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Trees</SelectItem>
+              <SelectItem value="public">Public Only</SelectItem>
+              <SelectItem value="private">Private Only</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={setSortBy}>
+            <SelectTrigger className="w-full md:w-40 text-sm sm:text-base">
+              <SelectValue placeholder="Sort by" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="updated">Last Updated</SelectItem>
+              <SelectItem value="created">Date Created</SelectItem>
+              <SelectItem value="name">Name A-Z</SelectItem>
+              <SelectItem value="members">Most Members</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <div className="flex gap-2 justify-center md:justify-start">
+            <Button
+              variant={viewMode === "grid" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("grid")}
+            >
+              <Grid3X3 className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "outline"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+            >
+              <List className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Active Filters */}
+        {activeFilters.length > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t">
+            <span className="text-xs sm:text-sm md:text-base text-foreground">
+              Active filters:
+            </span>
+            {activeFilters}
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear all
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+// --- TreesResultsSection ---
+function TreesResultsSection({
+  filteredTrees,
+  trees,
+  viewMode,
+  openEditModal,
+  openDeleteConfirm,
+  handleShareTree,
+  searchTerm,
+  filterBy,
+  sortBy,
+  setSearchTerm,
+  setFilterBy,
+  setSortBy,
+  setViewMode,
+}: {
+  filteredTrees: FamilyTree[];
+  trees: FamilyTree[];
+  viewMode: ViewMode;
+  openEditModal: (tree: FamilyTree) => void;
+  openDeleteConfirm: (treeId: string) => void;
+  handleShareTree: (tree: FamilyTree) => void;
+  searchTerm: string;
+  filterBy: FilterOption;
+  sortBy: SortOption;
+  setSearchTerm: (v: string) => void;
+  setFilterBy: (v: FilterOption) => void;
+  setSortBy: (v: SortOption) => void;
+  setViewMode: (v: ViewMode) => void;
+}) {
+  return (
+    <>
+      {/* Trees Grid/List */}
+      {filteredTrees.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-10 sm:py-12">
+            {trees.length === 0 ? (
+              <>
+                <TreePine className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mb-4" />
+                <h3 className="text-base sm:text-lg md:text-xl font-medium text-foreground mb-2">
+                  No family trees yet
+                </h3>
+                <p className="text-xs sm:text-base md:text-lg text-foreground mb-6">
+                  Get started by creating your first family tree to begin
+                  documenting your family history.
+                </p>
+                <Button onClick={() => setViewMode("grid") /* fallback */}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Create Your First Tree
+                </Button>
+              </>
+            ) : (
+              <>
+                <Search className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mb-4" />
+                <h3 className="text-base sm:text-lg md:text-xl font-medium text-foreground mb-2">
+                  No trees found
+                </h3>
+                <p className="text-xs sm:text-base md:text-lg text-foreground mb-6">
+                  No family trees match your current search and filter criteria.
+                </p>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setSearchTerm("");
+                    setFilterBy("all");
+                    setSortBy("updated");
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          {/* Results Summary */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 md:mb-4 gap-2">
+            <p className="text-xs sm:text-sm md:text-base text-foreground">
+              Showing {filteredTrees.length} of {trees.length} family trees
+            </p>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
+              <span className="text-xs sm:text-sm md:text-base text-foreground">
+                {filteredTrees.reduce(
+                  (sum, tree) => sum + tree._count.members,
+                  0
+                )}{" "}
+                total members
+              </span>
+            </div>
+          </div>
+
+          {/* Trees Display */}
+          <div
+            className={
+              viewMode === "grid"
+                ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6"
+                : "space-y-3 sm:space-y-4"
+            }
+          >
+            {filteredTrees.map((tree) => (
+              <TreeCard
+                key={tree.id}
+                tree={tree}
+                onDelete={() => openDeleteConfirm(tree.id)}
+                onEdit={() => openEditModal(tree)}
+                onShare={() => handleShareTree(tree)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </>
+  );
+}
+
 export default function TreesPage() {
   const [trees, setTrees] = useState<FamilyTree[]>([]);
   const [filteredTrees, setFilteredTrees] = useState<FamilyTree[]>([]);
@@ -258,7 +592,8 @@ export default function TreesPage() {
 
   const fetchTrees = async () => {
     try {
-      const token = user?.accessToken;
+      if (!user) return;
+      const token = await user.getIdToken();
       const response = await fetch("/api/family-trees", {
         method: "GET",
         headers: {
@@ -314,14 +649,15 @@ export default function TreesPage() {
   };
 
   const handleDeleteTree = async () => {
-    if (!deletingTreeId) return;
+    if (!deletingTreeId || !user) return;
     setEditLoading(true);
     try {
+      const token = await user.getIdToken();
       // Fetch members for the tree
       const membersRes = await fetch(
         `/api/family-trees/${deletingTreeId}/members`,
         {
-          headers: { Authorization: `Bearer ${user?.accessToken}` },
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       const members = membersRes.ok ? await membersRes.json() : [];
@@ -331,14 +667,14 @@ export default function TreesPage() {
           `/api/family-trees/${deletingTreeId}/members/${member.id}`,
           {
             method: "DELETE",
-            headers: { Authorization: `Bearer ${user?.accessToken}` },
+            headers: { Authorization: `Bearer ${token}` },
           }
         );
       }
       // Delete the tree
       const res = await fetch(`/api/family-trees/${deletingTreeId}`, {
         method: "DELETE",
-        headers: { Authorization: `Bearer ${user?.accessToken}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         toast({
@@ -373,21 +709,6 @@ export default function TreesPage() {
     setShareDialogOpen(true);
   };
 
-  const getStatistics = () => {
-    const totalMembers = trees.reduce(
-      (sum, tree) => sum + tree._count.members,
-      0
-    );
-    const totalRelationships = trees.reduce(
-      (sum, tree) => sum + tree._count.relationships,
-      0
-    );
-    const publicTrees = trees.filter((tree) => tree.isPublic).length;
-    const privateTrees = trees.filter((tree) => !tree.isPublic).length;
-
-    return { totalMembers, totalRelationships, publicTrees, privateTrees };
-  };
-
   // Edit logic
   const openEditModal = (tree: FamilyTree) => {
     setEditingTree(tree);
@@ -406,14 +727,15 @@ export default function TreesPage() {
     setEditForm({ ...editForm, isPublic: val });
   };
   const handleEditSubmit = async () => {
-    if (!editingTree) return;
+    if (!editingTree || !user) return;
     setEditLoading(true);
     try {
+      const token = await user.getIdToken();
       const res = await fetch(`/api/family-trees/${editingTree.id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${user?.accessToken}`,
+          Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify(editForm),
       });
@@ -449,6 +771,36 @@ export default function TreesPage() {
     setDeleteConfirmOpen(true);
   };
 
+  // Active filter badges
+  const activeFilters: React.ReactNode[] = [];
+  if (searchTerm)
+    activeFilters.push(
+      <Badge variant="secondary">Search: "{searchTerm}"</Badge>
+    );
+  if (filterBy !== "all")
+    activeFilters.push(
+      <Badge variant="secondary">
+        {filterBy === "public" ? "Public trees" : "Private trees"}
+      </Badge>
+    );
+  if (sortBy !== "updated")
+    activeFilters.push(
+      <Badge variant="secondary">
+        Sort:{" "}
+        {sortBy === "name"
+          ? "Name"
+          : sortBy === "created"
+          ? "Created"
+          : "Members"}
+      </Badge>
+    );
+
+  const clearFilters = () => {
+    setSearchTerm("");
+    setFilterBy("all");
+    setSortBy("updated");
+  };
+
   if (authLoading || loading) {
     return <PageLoader text="Loading your family trees..." />;
   }
@@ -457,287 +809,45 @@ export default function TreesPage() {
     return null; // Will redirect to login
   }
 
-  const stats = getStatistics();
+  const stats = getStatistics(trees);
 
   return (
     <div className="min-h-screen bg-background">
       {editLoading && <Loader variant="overlay" text="Processing..." />}
-      <Header
-        treeName="My Family Trees"
-        extraActions={
-          <Button onClick={() => setShowCreateModal(true)}>
-            <Plus className="h-4 w-4 mr-2" />
-            New Tree
-          </Button>
-        }
-        showProfile={true}
+      <DashboardHeader
+        onNewTree={() => setShowCreateModal(true)}
         onResetView={() => router.push("/user-profile")}
       />
       <main className="max-w-full min-h-[calc(100vh-80px)] md:min-h-[calc(100vh-120px)] mx-auto py-4 sm:py-6 sm:px-6 lg:px-8 pt-20 sm:pt-32 pb-24 sm:pb-8">
         <div className="px-1 sm:px-4 py-4 sm:py-6">
-          {/* Statistics Cards */}
-          <div className="flex gap-3 mb-6 overflow-x-auto md:grid md:grid-cols-4 md:gap-4 md:mb-8">
-            <div className="min-w-[170px] sm:min-w-[200px] md:min-w-0">
-              <Card>
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs sm:text-sm md:text-base font-medium text-foreground">
-                        Total Trees
-                      </p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold">
-                        {trees.length}
-                      </p>
-                    </div>
-                    <TreePine className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div className="min-w-[170px] sm:min-w-[200px] md:min-w-0">
-              <Card>
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs sm:text-sm md:text-base font-medium text-foreground">
-                        Family Members
-                      </p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold">
-                        {stats.totalMembers}
-                      </p>
-                    </div>
-                    <Users className="h-7 w-7 sm:h-8 sm:w-8 text-blue-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div className="min-w-[170px] sm:min-w-[200px] md:min-w-0">
-              <Card>
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs sm:text-sm md:text-base font-medium text-foreground">
-                        Public Trees
-                      </p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold">
-                        {stats.publicTrees}
-                      </p>
-                    </div>
-                    <Globe className="h-7 w-7 sm:h-8 sm:w-8 text-purple-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            <div className="min-w-[170px] sm:min-w-[200px] md:min-w-0">
-              <Card>
-                <CardContent className="p-3 md:p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs sm:text-sm md:text-base font-medium text-foreground">
-                        Private Trees
-                      </p>
-                      <p className="text-lg sm:text-xl md:text-2xl font-bold">
-                        {stats.privateTrees}
-                      </p>
-                    </div>
-                    <Lock className="h-7 w-7 sm:h-8 sm:w-8 text-gray-600" />
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-
-          {/* Filters and Search */}
-          <Card className="mb-4 md:mb-6">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
-                <Filter className="h-5 w-5 sm:h-6 sm:w-6" />
-                Filter & Search
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-3 md:gap-4 md:flex-row">
-                <div className="flex-1">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-                    <Input
-                      placeholder="Search family trees..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10 text-sm sm:text-base"
-                    />
-                  </div>
-                </div>
-
-                <Select
-                  value={filterBy}
-                  onValueChange={(value: FilterOption) => setFilterBy(value)}
-                >
-                  <SelectTrigger className="w-full md:w-40 text-sm sm:text-base">
-                    <SelectValue placeholder="Filter by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Trees</SelectItem>
-                    <SelectItem value="public">Public Only</SelectItem>
-                    <SelectItem value="private">Private Only</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <Select
-                  value={sortBy}
-                  onValueChange={(value: SortOption) => setSortBy(value)}
-                >
-                  <SelectTrigger className="w-full md:w-40 text-sm sm:text-base">
-                    <SelectValue placeholder="Sort by" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="updated">Last Updated</SelectItem>
-                    <SelectItem value="created">Date Created</SelectItem>
-                    <SelectItem value="name">Name A-Z</SelectItem>
-                    <SelectItem value="members">Most Members</SelectItem>
-                  </SelectContent>
-                </Select>
-
-                <div className="flex gap-2 justify-center md:justify-start">
-                  <Button
-                    variant={viewMode === "grid" ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => setViewMode("grid")}
-                  >
-                    <Grid3X3 className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </Button>
-                  <Button
-                    variant={viewMode === "list" ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => setViewMode("list")}
-                  >
-                    <List className="h-4 w-4 sm:h-5 sm:w-5" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Active Filters */}
-              {(searchTerm || filterBy !== "all" || sortBy !== "updated") && (
-                <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t">
-                  <span className="text-xs sm:text-sm md:text-base text-foreground">
-                    Active filters:
-                  </span>
-                  {searchTerm && (
-                    <Badge variant="secondary">Search: "{searchTerm}"</Badge>
-                  )}
-                  {filterBy !== "all" && (
-                    <Badge variant="secondary">
-                      {filterBy === "public" ? "Public trees" : "Private trees"}
-                    </Badge>
-                  )}
-                  {sortBy !== "updated" && (
-                    <Badge variant="secondary">
-                      Sort:{" "}
-                      {sortBy === "name"
-                        ? "Name"
-                        : sortBy === "created"
-                        ? "Created"
-                        : "Members"}
-                    </Badge>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      setSearchTerm("");
-                      setFilterBy("all");
-                      setSortBy("updated");
-                    }}
-                  >
-                    Clear all
-                  </Button>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Trees Grid/List */}
-          {filteredTrees.length === 0 ? (
-            <Card>
-              <CardContent className="text-center py-10 sm:py-12">
-                {trees.length === 0 ? (
-                  <>
-                    <TreePine className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mb-4" />
-                    <h3 className="text-base sm:text-lg md:text-xl font-medium text-foreground mb-2">
-                      No family trees yet
-                    </h3>
-                    <p className="text-xs sm:text-base md:text-lg text-foreground mb-6">
-                      Get started by creating your first family tree to begin
-                      documenting your family history.
-                    </p>
-                    <Button onClick={() => setShowCreateModal(true)}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Create Your First Tree
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <Search className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mb-4" />
-                    <h3 className="text-base sm:text-lg md:text-xl font-medium text-foreground mb-2">
-                      No trees found
-                    </h3>
-                    <p className="text-xs sm:text-base md:text-lg text-foreground mb-6">
-                      No family trees match your current search and filter
-                      criteria.
-                    </p>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setSearchTerm("");
-                        setFilterBy("all");
-                        setSortBy("updated");
-                      }}
-                    >
-                      Clear Filters
-                    </Button>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-          ) : (
-            <>
-              {/* Results Summary */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 md:mb-4 gap-2">
-                <p className="text-xs sm:text-sm md:text-base text-foreground">
-                  Showing {filteredTrees.length} of {trees.length} family trees
-                </p>
-                <div className="flex items-center gap-2">
-                  <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
-                  <span className="text-xs sm:text-sm md:text-base text-foreground">
-                    {filteredTrees.reduce(
-                      (sum, tree) => sum + tree._count.members,
-                      0
-                    )}{" "}
-                    total members
-                  </span>
-                </div>
-              </div>
-
-              {/* Trees Display */}
-              <div
-                className={
-                  viewMode === "grid"
-                    ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-6"
-                    : "space-y-3 sm:space-y-4"
-                }
-              >
-                {filteredTrees.map((tree) => (
-                  <TreeCard
-                    key={tree.id}
-                    tree={tree}
-                    onDelete={() => openDeleteConfirm(tree.id)}
-                    onEdit={() => openEditModal(tree)}
-                    onShare={() => handleShareTree(tree)}
-                  />
-                ))}
-              </div>
-            </>
-          )}
+          <StatsAndCalendarSection stats={stats} treesLength={trees.length} />
+          <FiltersSection
+            searchTerm={searchTerm}
+            setSearchTerm={setSearchTerm}
+            filterBy={filterBy}
+            setFilterBy={setFilterBy}
+            sortBy={sortBy}
+            setSortBy={setSortBy}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+            activeFilters={activeFilters}
+            clearFilters={clearFilters}
+          />
+          <TreesResultsSection
+            filteredTrees={filteredTrees}
+            trees={trees}
+            viewMode={viewMode}
+            openEditModal={openEditModal}
+            openDeleteConfirm={openDeleteConfirm}
+            handleShareTree={handleShareTree}
+            searchTerm={searchTerm}
+            filterBy={filterBy}
+            sortBy={sortBy}
+            setSearchTerm={setSearchTerm}
+            setFilterBy={setFilterBy}
+            setSortBy={setSortBy}
+            setViewMode={setViewMode}
+          />
         </div>
       </main>
 
@@ -746,10 +856,9 @@ export default function TreesPage() {
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}
         onSuccess={(treeId) => {
-          console.log("Tree created successfully with ID:", treeId);
-          fetchTrees(); // Refresh the tree list
-          setShowCreateModal(false); // Close the modal
-          router.push(`/trees/${treeId}`); // Navigate to the new tree
+          fetchTrees();
+          setShowCreateModal(false);
+          router.push(`/trees/${treeId}`);
         }}
       />
 
@@ -763,19 +872,25 @@ export default function TreesPage() {
             <DialogTitle>Edit Family Tree</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
-            <Input
-              label="Name"
-              name="name"
-              value={editForm.name}
-              onChange={handleEditChange}
-              required
-            />
-            <Input
-              label="Description"
-              name="description"
-              value={editForm.description}
-              onChange={handleEditChange}
-            />
+            <div>
+              <Label htmlFor="edit-tree-name">Name</Label>
+              <Input
+                id="edit-tree-name"
+                name="name"
+                value={editForm.name}
+                onChange={handleEditChange}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit-tree-description">Description</Label>
+              <Input
+                id="edit-tree-description"
+                name="description"
+                value={editForm.description}
+                onChange={handleEditChange}
+              />
+            </div>
             <div className="flex items-center gap-2">
               <Switch
                 checked={editForm.isPublic}
