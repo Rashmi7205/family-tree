@@ -205,78 +205,175 @@ export const useFamilyTree = (treeId: string) => {
   );
 
   const graphData = useMemo(() => {
-    const newNodes: Node[] = [];
-    const newEdges: Edge[] = [];
-    const couples = new Map<string, string>();
-    const coupleMembers = new Map<string, string[]>();
+    // --- CONFIGURABLE SPACING ---
+    const spacingX = 520; // Horizontal space between couples
+    const spacingY = 320; // Vertical space between generations
+    const spouseOffset = 280; // Space between spouses in a couple
 
-    members.forEach((member) => {
-      const coupleId = member.spouseId
+    // --- 1. Build Couple Groups ---
+    // Each couple is a unique node for layout purposes
+    // coupleId: sorted concatenation of both member ids (or just member id if single)
+    const couples = new Map<
+      string,
+      { members: string[]; generation: number }
+    >();
+    const memberToCouple = new Map<string, string>();
+    const memberMap = new Map(members.map((m) => [m.id, m]));
+
+    // Helper: get couple id for a member
+    function getCoupleId(member: FamilyMember) {
+      return member.spouseId
         ? [member.id, member.spouseId].sort().join("-")
         : member.id;
-      couples.set(member.id, coupleId);
-      if (!coupleMembers.has(coupleId)) {
-        coupleMembers.set(coupleId, []);
-      }
-      coupleMembers.get(coupleId)!.push(member.id);
-    });
+    }
 
-    const generationMap = new Map<string, number>();
-    const findGeneration = (
+    // Helper: find generation for a member recursively
+    function findGeneration(
       memberId: string,
       visited = new Set<string>()
-    ): number => {
+    ): number {
       if (visited.has(memberId)) return 0;
       visited.add(memberId);
-      const member = members.find((m) => m.id === memberId);
+      const member = memberMap.get(memberId);
       if (!member || !member.parents.length) return 0;
       const parentLevels = member.parents.map((pid) =>
         findGeneration(pid, visited)
       );
       return Math.max(...parentLevels) + 1;
-    };
+    }
 
-    coupleMembers.forEach((membersInCouple, coupleId) => {
-      const generation = Math.min(
-        ...membersInCouple.map((mid) => findGeneration(mid))
-      );
-      generationMap.set(coupleId, generation);
-    });
-
-    const generationGroups = new Map<number, string[]>();
-    generationMap.forEach((gen, coupleId) => {
-      if (!generationGroups.has(gen)) {
-        generationGroups.set(gen, []);
-      }
-      generationGroups.get(gen)!.push(coupleId);
-    });
-
-    const spacingY = 320;
-    const spacingX = 500;
-    const spouseOffset = 540;
-
-    Array.from(generationGroups.entries())
-      .sort(([genA], [genB]) => genA - genB)
-      .forEach(([generation, coupleIds]) => {
-        const y = generation * spacingY;
-        coupleIds.forEach((cid, index) => {
-          const couple = coupleMembers.get(cid)!;
-          const totalWidth = (couple.length - 1) * spouseOffset;
-
-          couple.forEach((mid, spouseIndex) => {
-            const x =
-              index * spacingX + spouseIndex * spouseOffset - totalWidth / 2;
-            const member = members.find((m) => m.id === mid)!;
-            newNodes.push({
-              id: mid,
-              position: { x, y },
-              data: { ...member, isSelected: false },
-              type: "familyMember",
-            });
-          });
+    // Build couples and assign generation
+    members.forEach((member) => {
+      const coupleId = getCoupleId(member);
+      memberToCouple.set(member.id, coupleId);
+      if (!couples.has(coupleId)) {
+        couples.set(coupleId, {
+          members: [],
+          generation: findGeneration(member.id),
         });
+      }
+      couples.get(coupleId)!.members.push(member.id);
+    });
+
+    // --- 2. Group Couples by Generation ---
+    const generationCouples = new Map<number, string[]>();
+    couples.forEach((couple, coupleId) => {
+      if (!generationCouples.has(couple.generation)) {
+        generationCouples.set(couple.generation, []);
+      }
+      generationCouples.get(couple.generation)!.push(coupleId);
+    });
+
+    // --- 3. Assign Positions to Couples ---
+    // couplePositions: coupleId -> { x, y }
+    const couplePositions = new Map<string, { x: number; y: number }>();
+    const memberPositions = new Map<string, { x: number; y: number }>();
+
+    // Place root generation (generation 0) couples horizontally
+    const rootCouples = generationCouples.get(0) || [];
+    rootCouples.forEach((coupleId, i) => {
+      couplePositions.set(coupleId, { x: i * spacingX, y: 0 });
+    });
+
+    // Place subsequent generations with minimum spacing
+    const maxGeneration = Math.max(...Array.from(generationCouples.keys()));
+    for (let gen = 1; gen <= maxGeneration; gen++) {
+      const couplesInGen = generationCouples.get(gen) || [];
+      // 1. Calculate desired x for each couple (centered under parents)
+      const desiredXs: { coupleId: string; x: number }[] = couplesInGen.map(
+        (coupleId) => {
+          const couple = couples.get(coupleId)!;
+          let parentCoupleCenters: number[] = [];
+          couple.members.forEach((mid) => {
+            const member = memberMap.get(mid);
+            if (member && member.parents.length) {
+              member.parents.forEach((pid) => {
+                const parentCoupleId = memberToCouple.get(pid);
+                const parentPos = parentCoupleId
+                  ? couplePositions.get(parentCoupleId)
+                  : undefined;
+                if (parentPos) parentCoupleCenters.push(parentPos.x);
+              });
+            }
+          });
+          let x = 0;
+          if (parentCoupleCenters.length) {
+            x =
+              parentCoupleCenters.reduce((a, b) => a + b, 0) /
+              parentCoupleCenters.length;
+          }
+          return { coupleId, x };
+        }
+      );
+
+      // 2. Sort by desired x
+      desiredXs.sort((a, b) => a.x - b.x);
+
+      // 3. Adjust to maintain minimum spacingX and optionally center the generation
+      let xs: number[] = [];
+      let lastX: number | null = null;
+      desiredXs.forEach((item, i) => {
+        let x = item.x;
+        if (lastX !== null && x < lastX + spacingX) {
+          x = lastX + spacingX;
+        }
+        xs.push(x);
+        couplePositions.set(item.coupleId, { x, y: gen * spacingY });
+        lastX = x;
       });
 
+      // Optionally center the generation horizontally
+      if (xs.length > 0) {
+        const minX = Math.min(...xs);
+        const maxX = Math.max(...xs);
+        const centerOffset = (minX + maxX) / 2;
+        const desiredCenter = 0; // Change this to your canvas center if needed
+        const shift = desiredCenter - centerOffset;
+        // Shift all couples in this generation
+        desiredXs.forEach((item) => {
+          const pos = couplePositions.get(item.coupleId);
+          if (pos) {
+            couplePositions.set(item.coupleId, { x: pos.x + shift, y: pos.y });
+          }
+        });
+      }
+    }
+
+    // --- 4. Assign Positions to Members (within their couple) ---
+    couples.forEach((couple, coupleId) => {
+      const base = couplePositions.get(coupleId)!;
+      if (couple.members.length === 1) {
+        // Single member (no spouse)
+        memberPositions.set(couple.members[0], { x: base.x, y: base.y });
+      } else {
+        // Two spouses: offset left/right
+        memberPositions.set(couple.members[0], {
+          x: base.x - spouseOffset / 2,
+          y: base.y,
+        });
+        memberPositions.set(couple.members[1], {
+          x: base.x + spouseOffset / 2,
+          y: base.y,
+        });
+      }
+    });
+
+    // --- 5. Build Nodes ---
+    const newNodes: Node[] = [];
+    members.forEach((member) => {
+      const pos = memberPositions.get(member.id);
+      if (!pos) return;
+      newNodes.push({
+        id: member.id,
+        position: pos,
+        data: { ...member, isSelected: false },
+        type: "familyMember",
+      });
+    });
+
+    // --- 6. Build Edges ---
+    const newEdges: Edge[] = [];
+    // Parent-child edges
     members.forEach((member) => {
       member.parents.forEach((parentId) => {
         newEdges.push({
@@ -288,7 +385,7 @@ export const useFamilyTree = (treeId: string) => {
         });
       });
     });
-
+    // Spouse edges
     const spouseEdges = new Set<string>();
     members.forEach((member) => {
       if (
