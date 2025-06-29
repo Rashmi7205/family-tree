@@ -1,46 +1,15 @@
 "use client";
-import { useCallback, useMemo, useState, useEffect, useRef } from "react";
-import ReactFlow, {
-  Background,
-  Controls,
-  MiniMap,
-  Node,
-  Edge,
-  useNodesState,
-  useEdgesState,
-  Connection,
-  addEdge,
-  Panel,
-  Handle,
-  Position,
-  ReactFlowProvider,
-  useReactFlow,
-} from "reactflow";
-import "reactflow/dist/style.css";
-import domtoimage from "dom-to-image-more";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import StyledCardNode from "@/components/family-tree-viewer/StyledCardNode";
-import {
-  Users,
-  GitBranch,
-  Network,
-  RotateCcw,
-  Info,
-  Eye,
-  EyeOff,
-  Download,
-  PanelRightOpen,
-  PanelRightClose,
-} from "lucide-react";
+
+import { useRef, useState, useCallback, useEffect } from "react";
+import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { useRouter } from "next/navigation";
+import { usePublicFamilyTree } from "@/components/family-tree-viewer/hooks";
 import { Header } from "@/components/family-tree-viewer/Header";
-import { Sidebar } from "@/components/family-tree-viewer/Sidebar";
 import { TreeCanvas } from "@/components/family-tree-viewer/TreeCanvas";
-import ExportPoster from "@/components/family-tree/ExportPoster";
-import { useAuth } from "@/lib/auth/auth-context";
+import { Button } from "@/components/ui/button";
+import { Loader, PageLoader } from "@/components/ui/loader";
+import { ReactFlowProvider, useReactFlow } from "reactflow";
+import { Download } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -49,11 +18,49 @@ import {
   SheetDescription,
   SheetClose,
 } from "@/components/ui/sheet";
-import { FamilyMember } from "@/components/family-tree-viewer/types";
-import { Loader, PageLoader } from "@/components/ui/loader";
+import ExportPoster from "@/components/family-tree/ExportPoster";
 
-const nodeTypes = {
-  familyMember: StyledCardNode,
+const malePalette = {
+  card: "bg-indigo-100",
+  ring: "hover:ring-indigo-300",
+  imageBg: "bg-indigo-200/50",
+  name: "text-[#414141]",
+  meta: "text-[#414141]/80",
+  initial: "text-[#414141]",
+  border: "border-indigo-300",
+};
+
+const femalePalette = {
+  card: "bg-rose-100",
+  ring: "hover:ring-rose-300",
+  imageBg: "bg-rose-200/50",
+  name: "text-[#414141]",
+  meta: "text-[#414141]/80",
+  initial: "text-[#414141]",
+  border: "border-rose-300",
+};
+
+const otherPalette = {
+  card: "bg-purple-100",
+  ring: "hover:ring-purple-300",
+  imageBg: "bg-purple-200/50",
+  name: "text-[#414141]",
+  meta: "text-[#414141]/80",
+  initial: "text-[#414141]",
+  border: "border-purple-300",
+};
+
+const getPaletteByGender = (
+  gender: "male" | "female" | "other" | undefined
+) => {
+  switch (gender) {
+    case "male":
+      return malePalette;
+    case "female":
+      return femalePalette;
+    default:
+      return otherPalette;
+  }
 };
 
 function MemberDetailSheetViewOnly({
@@ -62,12 +69,11 @@ function MemberDetailSheetViewOnly({
   onClose,
 }: {
   open: boolean;
-  member:
-    | (FamilyMember & { allMembers?: FamilyMember[]; profileImageUrl?: string })
-    | null;
+  member: any;
   onClose: () => void;
 }) {
   if (!member) return null;
+  const palette = getPaletteByGender(member.gender);
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
@@ -94,7 +100,12 @@ function MemberDetailSheetViewOnly({
             </SheetDescription>
           </SheetHeader>
           <div className="flex flex-col items-center gap-4 flex-1">
-            <div className="w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden bg-gray-200">
+            <div
+              className={cn(
+                "w-20 h-20 rounded-xl flex items-center justify-center overflow-hidden",
+                palette.imageBg
+              )}
+            >
               {member.profileImageUrl ? (
                 <img
                   src={member.profileImageUrl}
@@ -102,7 +113,7 @@ function MemberDetailSheetViewOnly({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-4xl text-gray-500">
+                <span className={cn("text-4xl", palette.initial)}>
                   {member.firstName?.[0]}
                 </span>
               )}
@@ -120,7 +131,7 @@ function MemberDetailSheetViewOnly({
                   {member.parents && member.parents.length > 0 ? (
                     member.parents.map((pid: string) => {
                       const parent = member.allMembers?.find(
-                        (m: FamilyMember) => m.id === pid
+                        (m: any) => m.id === pid
                       );
                       return parent ? (
                         <span
@@ -142,7 +153,7 @@ function MemberDetailSheetViewOnly({
                   {member.children && member.children.length > 0 ? (
                     member.children.map((cid: string) => {
                       const child = member.allMembers?.find(
-                        (m: FamilyMember) => m.id === cid
+                        (m: any) => m.id === cid
                       );
                       return child ? (
                         <span
@@ -164,7 +175,7 @@ function MemberDetailSheetViewOnly({
                   {member.spouseId ? (
                     (() => {
                       const spouse = member.allMembers?.find(
-                        (m: FamilyMember) => m.id === member.spouseId
+                        (m: any) => m.id === member.spouseId
                       );
                       return spouse ? (
                         <span className="bg-gray-100 text-gray-700 rounded px-2 py-0.5 text-xs">
@@ -190,220 +201,100 @@ function MemberDetailSheetViewOnly({
   );
 }
 
-function PublicTreeViewer({ treeId }: { treeId: string }) {
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const [selectedNode, setSelectedNode] = useState<string | null>(null);
-  const [showInfo, setShowInfo] = useState(false);
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
-  const reactFlowRef = useRef<HTMLDivElement>(null);
+function PublicTreeContent() {
+  const params = useParams();
+  const treeId = params?.id as string;
   const [treeData, setTreeData] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [members, setMembers] = useState<FamilyMember[]>([]);
-  const { setViewport } = useReactFlow();
-  const { user } = useAuth();
-  const [showPoster, setShowPoster] = useState(false);
-  const posterRef = useRef<HTMLDivElement>(null);
+  const {
+    members,
+    nodes,
+    edges,
+    selectedMember,
+    onNodesChange,
+    onEdgesChange,
+    onNodeClick,
+    loading,
+    error,
+    isUsingCustomPositions,
+  } = usePublicFamilyTree(treeId);
+
+  const reactFlowRef = useRef<HTMLDivElement>(null);
+  const { setViewport, fitView } = useReactFlow();
+  const [showInfo, setShowInfo] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMember, setSheetMember] = useState<any>(null);
+  const [showPoster, setShowPoster] = useState(false);
+  const posterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchTree = async () => {
       try {
-        setLoading(true);
+        console.log("Fetching public tree data for treeId:", treeId);
         const res = await fetch(`/api/family-trees/${treeId}/public`);
+        console.log("Response status:", res.status);
+
         if (!res.ok) {
           const errorData = await res.json();
+          console.error("API Error:", errorData);
           throw new Error(errorData.error || "Failed to fetch tree data");
         }
+
         const data = await res.json();
+        console.log("Public tree view - treeData received:", data);
+        console.log("Public tree view - createdAt field:", data.createdAt);
+        console.log(
+          "Public tree view - createdAt type:",
+          typeof data.createdAt
+        );
         setTreeData(data);
-        setMembers(data.members || []);
-      } catch (err: any) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
+      } catch (error) {
+        console.error("Error fetching tree:", error);
       }
     };
-    if (treeId) {
-      fetchTree();
-    }
+    if (treeId) fetchTree();
   }, [treeId]);
 
-  const graphData = useMemo(() => {
-    const newNodes: Node[] = [];
-    const newEdges: Edge[] = [];
-    const couples = new Map<string, string>();
-    const coupleMembers = new Map<string, string[]>();
-
-    members.forEach((member) => {
-      const coupleId = member.spouseId
-        ? [member.id, member.spouseId].sort().join("-")
-        : member.id;
-      couples.set(member.id, coupleId);
-      if (!coupleMembers.has(coupleId)) {
-        coupleMembers.set(coupleId, []);
-      }
-      coupleMembers.get(coupleId)!.push(member.id);
-    });
-
-    const generationMap = new Map<string, number>();
-    const findGeneration = (
-      memberId: string,
-      visited = new Set<string>()
-    ): number => {
-      if (visited.has(memberId)) return 0;
-      visited.add(memberId);
-      const member = members.find((m) => m.id === memberId);
-      if (!member || !member.parents.length) return 0;
-      const parentLevels = member.parents.map((pid) =>
-        findGeneration(pid, visited)
-      );
-      return Math.max(...parentLevels) + 1;
-    };
-
-    coupleMembers.forEach((membersInCouple, coupleId) => {
-      const generation = Math.min(
-        ...membersInCouple.map((mid) => findGeneration(mid))
-      );
-      generationMap.set(coupleId, generation);
-    });
-
-    const generationGroups = new Map<number, string[]>();
-    generationMap.forEach((gen, coupleId) => {
-      if (!generationGroups.has(gen)) {
-        generationGroups.set(gen, []);
-      }
-      generationGroups.get(gen)!.push(coupleId);
-    });
-
-    const spacingY = 320;
-    const spacingX = 500;
-    const spouseOffset = 540;
-
-    Array.from(generationGroups.entries())
-      .sort(([genA], [genB]) => genA - genB)
-      .forEach(([generation, coupleIds]) => {
-        const y = generation * spacingY;
-        coupleIds.forEach((cid, index) => {
-          const couple = coupleMembers.get(cid)!;
-          const totalWidth = (couple.length - 1) * spouseOffset;
-
-          couple.forEach((mid, spouseIndex) => {
-            const x =
-              index * spacingX + spouseIndex * spouseOffset - totalWidth / 2;
-            const currentMember = members.find((m) => m.id === mid)!;
-            newNodes.push({
-              id: mid,
-              position: { x, y },
-              data: {
-                ...currentMember,
-                isSelected: false,
-                onShowDetails: () =>
-                  setSelectedNode(selectedNode === mid ? null : mid),
-              },
-              type: "familyMember",
-            });
-          });
-        });
-      });
-
-    members.forEach((member) => {
-      member.parents.forEach((parentId) => {
-        newEdges.push({
-          id: `parent-${parentId}-${member.id}`,
-          source: parentId,
-          target: member.id,
-          type: "smoothstep",
-          style: { stroke: "#3b82f6", strokeWidth: 2 },
-        });
-      });
-    });
-
-    const spouseEdges = new Set<string>();
-    members.forEach((member) => {
-      if (
-        member.spouseId &&
-        !spouseEdges.has(`${member.id}-${member.spouseId}`)
-      ) {
-        newEdges.push({
-          id: `spouse-${member.id}-${member.spouseId}`,
-          source: member.id,
-          target: member.spouseId,
-          type: "straight",
-          style: { stroke: "#ec4899", strokeWidth: 2, strokeDasharray: "5,5" },
-        });
-        spouseEdges.add(`${member.id}-${member.spouseId}`);
-        spouseEdges.add(`${member.spouseId}-${member.id}`);
-      }
-    });
-
-    return { nodes: newNodes, edges: newEdges };
-  }, [members, selectedNode]);
-
-  useEffect(() => {
-    setNodes(graphData.nodes);
-    setEdges(graphData.edges);
-  }, [graphData, setNodes, setEdges]);
-
-  useEffect(() => {
-    setNodes((nodes) =>
-      nodes.map((node) => ({
-        ...node,
-        data: {
-          ...node.data,
-          isSelected: node.id === selectedNode,
-        },
-      }))
-    );
-  }, [selectedNode, setNodes]);
-
-  const onConnect = useCallback(
-    (params: Connection) => {
-      if (params.source && params.target) {
-        const newEdge = {
-          ...params,
-          id: `edge-${params.source}-${params.target}`,
-          type: "smoothstep" as const,
-          style: {
-            stroke: "#3b82f6",
-            strokeWidth: 2,
-          },
-          animated: false,
-        };
-
-        setEdges((eds) => addEdge(newEdge, eds));
-        console.log("New connection created:", params);
+  // Custom node click handler to open sheet
+  const handleNodeClick = useCallback(
+    (_: any, node: any) => {
+      const member = members.find((m) => m.id === node.id);
+      if (member) {
+        setSheetMember({ ...member, allMembers: members });
+        setSheetOpen(true);
       }
     },
-    [setEdges]
+    [members]
   );
 
+  // Inject onShowDetails into each node's data
+  const nodesWithHandler = nodes.map((node) => ({
+    ...node,
+    data: {
+      ...node.data,
+      onShowDetails: () => {
+        const member = members.find((m) => m.id === node.id);
+        if (member) {
+          setSheetMember({ ...member, allMembers: members });
+          setSheetOpen(true);
+        }
+      },
+    },
+  }));
+
+  console.log(
+    "PublicTreeContent: Rendering with",
+    nodes.length,
+    "nodes and",
+    edges.length,
+    "edges"
+  );
+  console.log("PublicTreeContent: Members:", members.length);
+
   const resetView = useCallback(() => {
-    setViewport({ x: 0, y: 0, zoom: 1 }, { duration: 500 });
-    setSelectedNode(null);
-  }, [setViewport]);
+    fitView({ duration: 500, padding: 0.2 });
+  }, [fitView]);
 
-  const selectedMember = selectedNode
-    ? members.find((m) => m.id === selectedNode)
-    : null;
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        showExportMenu &&
-        !(event.target as Element).closest(".export-menu")
-      ) {
-        setShowExportMenu(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showExportMenu]);
-
+  // Add export as poster logic
   const exportAsPoster = async () => {
     setShowPoster(true);
     setTimeout(async () => {
@@ -425,24 +316,35 @@ function PublicTreeViewer({ treeId }: { treeId: string }) {
     }, 100);
   };
 
-  const handleNodeClick = useCallback(
-    (_: any, node: any) => {
-      const member = members.find((m) => m.id === node.id);
-      if (member) {
-        setSheetMember({ ...member, allMembers: members });
-        setSheetOpen(true);
-      }
-    },
-    [members]
-  );
-
+  // Show page loader while initial loading
   if (loading && members.length === 0) {
     return <PageLoader text="Loading family tree..." />;
   }
-  if (error) {
+
+  // Show error state
+  if (error && members.length === 0) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background text-foreground">
-        Error: {error}
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">
+            <svg
+              className="w-16 h-16 mx-auto"
+              fill="currentColor"
+              viewBox="0 0 20 20"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          </div>
+          <h2 className="text-xl font-semibold mb-2">
+            Error Loading Family Tree
+          </h2>
+          <p className="text-muted-foreground mb-4">{error}</p>
+          <Button onClick={() => window.location.reload()}>Try Again</Button>
+        </div>
       </div>
     );
   }
@@ -450,61 +352,70 @@ function PublicTreeViewer({ treeId }: { treeId: string }) {
   return (
     <div className="w-screen h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden relative">
       <Header
-        onResetView={resetView}
         treeName={treeData?.name}
         createdDate={treeData?.createdAt}
+        onResetView={resetView}
         extraActions={
           <>
-            <Button onClick={exportAsPoster} variant="outline" size="sm">
+            {/* Export Button - Icon only on desktop */}
+            <Button
+              onClick={exportAsPoster}
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 min-w-[44px] min-h-[44px] hidden md:flex"
+              title="Export as Poster"
+            >
+              <Download className="h-5 w-5" />
+            </Button>
+
+            {/* Export Button - With text on mobile */}
+            <Button
+              onClick={exportAsPoster}
+              variant="outline"
+              size="sm"
+              className="md:hidden"
+            >
+              <Download className="w-4 h-4 mr-2" />
               Export as Poster
             </Button>
-            {!user && (
-              <Button
-                variant="default"
-                size="sm"
-                className="ml-2"
-                onClick={() => (window.location.href = "/auth/signin")}
-              >
-                Sign in to create your tree
-              </Button>
-            )}
           </>
         }
         viewOnly={true}
-        onShareOpen={() => setIsSidebarCollapsed(true)}
-      />
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute top-20 left-4 z-20"
-        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      >
-        {isSidebarCollapsed ? <PanelRightOpen /> : <PanelRightClose />}
-      </Button>
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
+        onShareOpen={() => {}}
+        onSaveLayout={undefined}
+        onResetLayout={undefined}
+        isUsingCustomPositions={isUsingCustomPositions}
+        savingPositions={false}
         members={members}
-        selectedMember={sheetMember}
-        onAddMember={() => {}}
-        onEditMember={() => {}}
-        onDeleteMember={() => {}}
         edges={edges}
-        viewOnly={true}
+        selectedMember={selectedMember}
       />
+
       <TreeCanvas
-        nodes={nodes}
+        nodes={nodesWithHandler}
         edges={edges}
-        onNodesChange={() => {}}
-        onEdgesChange={() => {}}
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         onNodeClick={handleNodeClick}
         reactFlowRef={reactFlowRef}
         showInfo={showInfo}
+        nodesDraggable={true}
+        nodesConnectable={false}
+        elementsSelectable={true}
       />
+
+      {/* Loading overlay for operations */}
+      {loading && members.length > 0 && (
+        <Loader variant="overlay" text="Processing..." />
+      )}
+
       <MemberDetailSheetViewOnly
         open={sheetOpen}
         member={sheetMember}
         onClose={() => setSheetOpen(false)}
       />
+
+      {/* Hidden poster for export */}
       {showPoster && (
         <div style={{ position: "fixed", left: -9999, top: 0, zIndex: -1 }}>
           <ExportPoster
@@ -520,13 +431,10 @@ function PublicTreeViewer({ treeId }: { treeId: string }) {
   );
 }
 
-export default function PublicTreePage({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  const { id } = params;
-
+export default function PublicTreePage() {
   return (
     <ReactFlowProvider>
-      <PublicTreeViewer treeId={id} />
+      <PublicTreeContent />
     </ReactFlowProvider>
   );
 }

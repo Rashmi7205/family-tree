@@ -40,7 +40,7 @@ const MemberCard = ({
   node: Node;
   offset: { x: number; y: number };
 }) => {
-  const { data: member } = node;
+  const member = node.data.member || node.data;
   return (
     <div
       key={member.id}

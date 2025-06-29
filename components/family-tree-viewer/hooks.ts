@@ -26,8 +26,34 @@ export const useFamilyTree = (treeId: string) => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [customPositions, setCustomPositions] = useState<
+    Array<{ memberId: string; x: number; y: number }>
+  >([]);
+  const [isUsingCustomPositions, setIsUsingCustomPositions] = useState(false);
+  const [savingPositions, setSavingPositions] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Load custom positions from tree data
+  const loadCustomPositions = useCallback((treeData: any) => {
+    console.log(
+      "Loading custom positions from tree data:",
+      treeData.nodePositions
+    );
+    if (treeData.nodePositions && treeData.nodePositions.length > 0) {
+      setCustomPositions(treeData.nodePositions);
+      setIsUsingCustomPositions(true);
+      console.log(
+        "Custom positions loaded:",
+        treeData.nodePositions.length,
+        "positions"
+      );
+    } else {
+      setCustomPositions([]);
+      setIsUsingCustomPositions(false);
+      console.log("No custom positions found, using auto-layout");
+    }
+  }, []);
 
   // Fetch members from API
   const refreshMembers = useCallback(async () => {
@@ -36,19 +62,33 @@ export const useFamilyTree = (treeId: string) => {
     setError(null);
     try {
       const token = await user.getIdToken();
-      const res = await fetch(`/api/family-trees/${treeId}/members`, {
+
+      // Fetch family tree data (includes nodePositions)
+      const treeRes = await fetch(`/api/family-trees/${treeId}`, {
         credentials: "include",
         headers: token ? { Authorization: `Bearer ${token}` } : {},
       });
-      if (!res.ok) throw new Error("Failed to fetch members");
-      const data = await res.json();
-      setMembers(data);
+
+      if (!treeRes.ok) throw new Error("Failed to fetch family tree");
+      const treeData = await treeRes.json();
+
+      // Load custom positions if they exist
+      loadCustomPositions(treeData);
+
+      // Fetch members
+      const membersRes = await fetch(`/api/family-trees/${treeId}/members`, {
+        credentials: "include",
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      if (!membersRes.ok) throw new Error("Failed to fetch members");
+      const membersData = await membersRes.json();
+      setMembers(membersData);
     } catch (err: any) {
       setError(err.message || "Unknown error");
     } finally {
       setLoading(false);
     }
-  }, [treeId, user]);
+  }, [treeId, user, loadCustomPositions]);
 
   useEffect(() => {
     if (treeId && user) {
@@ -204,174 +244,368 @@ export const useFamilyTree = (treeId: string) => {
     [selectedNodeId]
   );
 
+  // Track node position changes and log them
+  const onNodesChangeWithLogging = useCallback(
+    (changes: any) => {
+      onNodesChange(changes);
+
+      // After applying changes, log all current node positions
+      setTimeout(() => {
+        const currentNodes = nodes.map((node) => ({
+          id: node.id,
+          position: node.position,
+          data: node.data,
+        }));
+        console.log("=== Current Node Positions ===");
+        console.table(
+          currentNodes.map((node) => ({
+            id: node.id,
+            name: `${node.data.firstName} ${node.data.lastName}`,
+            x: Math.round(node.position.x),
+            y: Math.round(node.position.y),
+          }))
+        );
+        console.log("=== Full Node Data ===");
+        console.log(currentNodes);
+      }, 0);
+    },
+    [onNodesChange, nodes]
+  );
+
+  // Utility function to manually log current positions (can be called from console)
+  const logCurrentPositions = useCallback(() => {
+    console.log("=== Manual Position Log ===");
+    console.table(
+      nodes.map((node) => ({
+        id: node.id,
+        name: `${node.data.firstName} ${node.data.lastName}`,
+        x: Math.round(node.position.x),
+        y: Math.round(node.position.y),
+      }))
+    );
+
+    // Also log as JSON for easy copying
+    const positions = nodes.map((node) => ({
+      id: node.id,
+      name: `${node.data.firstName} ${node.data.lastName}`,
+      x: Math.round(node.position.x),
+      y: Math.round(node.position.y),
+    }));
+    console.log("=== Positions as JSON ===");
+    console.log(JSON.stringify(positions, null, 2));
+  }, [nodes]);
+
+  // Expose the logging function globally for debugging
+  useEffect(() => {
+    (window as any).logFamilyTreePositions = logCurrentPositions;
+  }, [logCurrentPositions]);
+
   const graphData = useMemo(() => {
-    // --- CONFIGURABLE SPACING ---
-    const spacingX = 520; // Horizontal space between couples
-    const spacingY = 320; // Vertical space between generations
-    const spouseOffset = 280; // Space between spouses in a couple
+    // If using custom positions, use them directly
+    if (isUsingCustomPositions && customPositions.length > 0) {
+      console.log("Applying custom positions to", members.length, "members");
+      const newNodes: Node[] = [];
+      const newEdges: Edge[] = [];
 
-    // --- 1. Build Couple Groups ---
-    // Each couple is a unique node for layout purposes
-    // coupleId: sorted concatenation of both member ids (or just member id if single)
-    const couples = new Map<
-      string,
-      { members: string[]; generation: number }
-    >();
-    const memberToCouple = new Map<string, string>();
-    const memberMap = new Map(members.map((m) => [m.id, m]));
-
-    // Helper: get couple id for a member
-    function getCoupleId(member: FamilyMember) {
-      return member.spouseId
-        ? [member.id, member.spouseId].sort().join("-")
-        : member.id;
-    }
-
-    // Helper: find generation for a member recursively
-    function findGeneration(
-      memberId: string,
-      visited = new Set<string>()
-    ): number {
-      if (visited.has(memberId)) return 0;
-      visited.add(memberId);
-      const member = memberMap.get(memberId);
-      if (!member || !member.parents.length) return 0;
-      const parentLevels = member.parents.map((pid) =>
-        findGeneration(pid, visited)
-      );
-      return Math.max(...parentLevels) + 1;
-    }
-
-    // Build couples and assign generation
-    members.forEach((member) => {
-      const coupleId = getCoupleId(member);
-      memberToCouple.set(member.id, coupleId);
-      if (!couples.has(coupleId)) {
-        couples.set(coupleId, {
-          members: [],
-          generation: findGeneration(member.id),
-        });
-      }
-      couples.get(coupleId)!.members.push(member.id);
-    });
-
-    // --- 2. Group Couples by Generation ---
-    const generationCouples = new Map<number, string[]>();
-    couples.forEach((couple, coupleId) => {
-      if (!generationCouples.has(couple.generation)) {
-        generationCouples.set(couple.generation, []);
-      }
-      generationCouples.get(couple.generation)!.push(coupleId);
-    });
-
-    // --- 3. Assign Positions to Couples ---
-    // couplePositions: coupleId -> { x, y }
-    const couplePositions = new Map<string, { x: number; y: number }>();
-    const memberPositions = new Map<string, { x: number; y: number }>();
-
-    // Place root generation (generation 0) couples horizontally
-    const rootCouples = generationCouples.get(0) || [];
-    rootCouples.forEach((coupleId, i) => {
-      couplePositions.set(coupleId, { x: i * spacingX, y: 0 });
-    });
-
-    // Place subsequent generations with minimum spacing
-    const maxGeneration = Math.max(...Array.from(generationCouples.keys()));
-    for (let gen = 1; gen <= maxGeneration; gen++) {
-      const couplesInGen = generationCouples.get(gen) || [];
-      // 1. Calculate desired x for each couple (centered under parents)
-      const desiredXs: { coupleId: string; x: number }[] = couplesInGen.map(
-        (coupleId) => {
-          const couple = couples.get(coupleId)!;
-          let parentCoupleCenters: number[] = [];
-          couple.members.forEach((mid) => {
-            const member = memberMap.get(mid);
-            if (member && member.parents.length) {
-              member.parents.forEach((pid) => {
-                const parentCoupleId = memberToCouple.get(pid);
-                const parentPos = parentCoupleId
-                  ? couplePositions.get(parentCoupleId)
-                  : undefined;
-                if (parentPos) parentCoupleCenters.push(parentPos.x);
-              });
-            }
+      // Build nodes with custom positions
+      members.forEach((member) => {
+        const customPos = customPositions.find(
+          (pos) => pos.memberId === member.id
+        );
+        if (customPos) {
+          // Use custom position
+          newNodes.push({
+            id: member.id,
+            type: "familyMember",
+            data: { ...member, isSelected: false },
+            position: { x: customPos.x, y: customPos.y },
+            draggable: true,
           });
-          let x = 0;
-          if (parentCoupleCenters.length) {
-            x =
-              parentCoupleCenters.reduce((a, b) => a + b, 0) /
-              parentCoupleCenters.length;
-          }
-          return { coupleId, x };
+        } else {
+          // Fallback: use auto-layout for members without custom positions
+          // This ensures all members are positioned even if some don't have custom positions
+          const fallbackX = newNodes.length * 300; // Simple fallback positioning
+          const fallbackY = 0;
+          console.log(
+            "Using fallback position for member",
+            member.firstName,
+            member.lastName,
+            "at",
+            fallbackX,
+            fallbackY
+          );
+          newNodes.push({
+            id: member.id,
+            type: "familyMember",
+            data: { ...member, isSelected: false },
+            position: { x: fallbackX, y: fallbackY },
+            draggable: true,
+          });
         }
-      );
-
-      // 2. Sort by desired x
-      desiredXs.sort((a, b) => a.x - b.x);
-
-      // 3. Adjust to maintain minimum spacingX and optionally center the generation
-      let xs: number[] = [];
-      let lastX: number | null = null;
-      desiredXs.forEach((item, i) => {
-        let x = item.x;
-        if (lastX !== null && x < lastX + spacingX) {
-          x = lastX + spacingX;
-        }
-        xs.push(x);
-        couplePositions.set(item.coupleId, { x, y: gen * spacingY });
-        lastX = x;
       });
 
-      // Optionally center the generation horizontally
-      if (xs.length > 0) {
-        const minX = Math.min(...xs);
-        const maxX = Math.max(...xs);
-        const centerOffset = (minX + maxX) / 2;
-        const desiredCenter = 0; // Change this to your canvas center if needed
-        const shift = desiredCenter - centerOffset;
-        // Shift all couples in this generation
-        desiredXs.forEach((item) => {
-          const pos = couplePositions.get(item.coupleId);
-          if (pos) {
-            couplePositions.set(item.coupleId, { x: pos.x + shift, y: pos.y });
+      // Build edges
+      members.forEach((member) => {
+        member.parents.forEach((parentId) => {
+          newEdges.push({
+            id: `parent-${parentId}-${member.id}`,
+            source: parentId,
+            target: member.id,
+            type: "smoothstep",
+            style: { stroke: "#3b82f6", strokeWidth: 2 },
+          });
+        });
+      });
+
+      // Spouse edges
+      const spouseEdges = new Set<string>();
+      members.forEach((member) => {
+        if (
+          member.spouseId &&
+          !spouseEdges.has(`${member.id}-${member.spouseId}`)
+        ) {
+          newEdges.push({
+            id: `spouse-${member.id}-${member.spouseId}`,
+            source: member.id,
+            target: member.spouseId,
+            type: "straight",
+            style: {
+              stroke: "#ec4899",
+              strokeWidth: 2,
+              strokeDasharray: "5,5",
+            },
+          });
+          spouseEdges.add(`${member.id}-${member.spouseId}`);
+          spouseEdges.add(`${member.spouseId}-${member.id}`);
+        }
+      });
+
+      return { nodes: newNodes, edges: newEdges };
+    }
+
+    console.log("Using auto-layout for", members.length, "members");
+
+    // --- CONFIGURABLE SPACING ---
+    const spacingX = 520;
+    const spacingY = 320;
+    const coupleSpacing = 280;
+    const canvasCenter = 0;
+
+    // --- 1. Build member and couple maps ---
+    const memberMap = new Map(members.map((m) => [m.id, m]));
+    const coupleMap = new Map<string, string>(); // memberId -> spouseId
+    members.forEach((member) => {
+      if (member.spouseId) {
+        coupleMap.set(member.id, member.spouseId);
+        coupleMap.set(member.spouseId, member.id);
+      }
+    });
+    function getCoupleKey(id: string) {
+      const spouseId = coupleMap.get(id);
+      return spouseId ? [id, spouseId].sort().join("-") : id;
+    }
+
+    // --- 2. Assign Generations (bottom-up, leaves at Y=0) ---
+    const generationMap = new Map<string, number>();
+    function assignGeneration(id: string, visited = new Set<string>()): number {
+      if (visited.has(id)) return 0;
+      visited.add(id);
+      const member = memberMap.get(id);
+      // If no children, generation is 0
+      const children = members.filter(
+        (m) => m.parents && m.parents.includes(id)
+      );
+      let maxGen = 0;
+      for (const child of children) {
+        const childGen = assignGeneration(child.id, visited);
+        if (childGen + 1 > maxGen) maxGen = childGen + 1;
+      }
+      generationMap.set(id, maxGen);
+      const spouseId = coupleMap.get(id);
+      if (spouseId) generationMap.set(spouseId, maxGen);
+      return maxGen;
+    }
+    // Assign generations for all members
+    members.forEach((m) => assignGeneration(m.id));
+
+    // --- 3. Build sibling groups for each generation ---
+    const siblingsByGen = new Map<number, string[][]>();
+    for (const [id, gen] of generationMap.entries()) {
+      if (!siblingsByGen.has(gen)) siblingsByGen.set(gen, []);
+    }
+    // Group siblings (including spouse's siblings) for each generation
+    const handled = new Set<string>();
+    for (const [id, gen] of generationMap.entries()) {
+      if (handled.has(id)) continue;
+      const member = memberMap.get(id);
+      if (!member) continue; // Skip if member not found
+
+      // Sibling group: all members with the same parents and generation
+      let siblings = members
+        .filter((m) => {
+          if (!m.parents || !member.parents) return false;
+          if (m.parents.length !== member.parents.length) return false;
+          if (!m.parents.every((p) => member.parents.includes(p))) return false;
+          return generationMap.get(m.id) === gen;
+        })
+        .map((m) => m.id);
+      // If in a couple, add spouse and their siblings
+      const spouseId = coupleMap.get(id);
+      if (spouseId) {
+        const spouse = memberMap.get(spouseId);
+        if (spouse) {
+          const spouseSiblings = members
+            .filter(
+              (m) =>
+                m.parents &&
+                spouse.parents &&
+                m.parents.length === spouse.parents.length &&
+                m.parents.every((p) => spouse.parents.includes(p)) &&
+                generationMap.get(m.id) === gen
+            )
+            .map((m) => m.id);
+          siblings = Array.from(
+            new Set([...siblings, ...spouseSiblings, spouseId])
+          );
+        }
+      }
+      siblings.forEach((sid) => handled.add(sid));
+      siblingsByGen.get(gen)!.push(siblings);
+    }
+
+    // --- 4. Recursive X-positioning ---
+    const nodePositions = new Map<string, { x: number; y: number }>();
+    const maxGen = Math.max(...Array.from(generationMap.values()));
+    function layoutGroup(
+      siblingGroup: string[],
+      gen: number,
+      xStart: number
+    ): number {
+      let xCursor = xStart;
+      const units: string[][] = [];
+      const handled = new Set<string>();
+      siblingGroup.forEach((id) => {
+        if (handled.has(id)) return;
+        const spouseId = coupleMap.get(id);
+        if (
+          spouseId &&
+          siblingGroup.includes(spouseId) &&
+          !handled.has(spouseId)
+        ) {
+          units.push([id, spouseId]);
+          handled.add(id);
+          handled.add(spouseId);
+        } else {
+          units.push([id]);
+          handled.add(id);
+        }
+      });
+      // For each unit, recursively layout their children (if any)
+      const childCenters: number[] = [];
+      units.forEach((unit) => {
+        // Find all children of this unit (as a couple)
+        let children: string[] = [];
+        unit.forEach((id) => {
+          children.push(
+            ...members
+              .filter((m) => m.parents && m.parents.includes(id))
+              .map((m) => m.id)
+          );
+        });
+        children = Array.from(new Set(children));
+        // If children exist, layout their sibling group recursively
+        let centerX = xCursor;
+        if (children.length > 0) {
+          // Find the sibling group for these children
+          const childGen = gen - 1;
+          const childGroups = siblingsByGen.get(childGen) || [];
+          const group = childGroups.find((g) =>
+            children.some((c) => g.includes(c))
+          );
+          if (group) {
+            centerX = layoutGroup(group, childGen, xCursor);
+          }
+        }
+        // Place the unit at centerX
+        const y = (maxGen - gen) * spacingY;
+        if (unit.length === 2) {
+          nodePositions.set(unit[0], {
+            x: centerX - coupleSpacing / 2,
+            y,
+          });
+          nodePositions.set(unit[1], {
+            x: centerX + coupleSpacing / 2,
+            y,
+          });
+        } else {
+          nodePositions.set(unit[0], { x: centerX, y });
+        }
+        childCenters.push(centerX);
+        xCursor = centerX + spacingX;
+      });
+      // Center the group horizontally
+      if (childCenters.length > 0) {
+        const minX = Math.min(...childCenters);
+        const maxX = Math.max(...childCenters);
+        const groupCenter = (minX + maxX) / 2;
+        const shift = canvasCenter - groupCenter;
+        siblingGroup.forEach((id) => {
+          const pos = nodePositions.get(id);
+          if (pos) nodePositions.set(id, { x: pos.x + shift, y: pos.y });
+          const spouseId = coupleMap.get(id);
+          if (spouseId) {
+            const spos = nodePositions.get(spouseId);
+            if (spos)
+              nodePositions.set(spouseId, { x: spos.x + shift, y: spos.y });
           }
         });
       }
+      // Return the center X of this group
+      return childCenters.length > 0
+        ? (Math.min(...childCenters) + Math.max(...childCenters)) / 2
+        : xCursor;
     }
-
-    // --- 4. Assign Positions to Members (within their couple) ---
-    couples.forEach((couple, coupleId) => {
-      const base = couplePositions.get(coupleId)!;
-      if (couple.members.length === 1) {
-        // Single member (no spouse)
-        memberPositions.set(couple.members[0], { x: base.x, y: base.y });
-      } else {
-        // Two spouses: offset left/right
-        memberPositions.set(couple.members[0], {
-          x: base.x - spouseOffset / 2,
-          y: base.y,
-        });
-        memberPositions.set(couple.members[1], {
-          x: base.x + spouseOffset / 2,
-          y: base.y,
-        });
-      }
+    // Start layout from the topmost generation
+    const topGen = Math.max(...Array.from(generationMap.values()));
+    const topGroups = siblingsByGen.get(topGen) || [];
+    let xStart = 0;
+    topGroups.forEach((group) => {
+      xStart = layoutGroup(group, topGen, xStart);
+      xStart += spacingX;
     });
 
-    // --- 5. Build Nodes ---
+    // --- 5. Ensure all members are positioned (fix missing nodes like 'rohit') ---
+    // For each generation, find unpositioned members and place them at the next available X
+    const positionedIds = new Set(Array.from(nodePositions.keys()));
+    for (const [id, gen] of generationMap.entries()) {
+      if (!positionedIds.has(id)) {
+        // Find the next available X in this generation
+        const others = Array.from(nodePositions.entries())
+          .filter(([_, pos]) => pos.y === (maxGen - gen) * spacingY)
+          .map(([_, pos]) => pos.x);
+        let x = 0;
+        if (others.length > 0) {
+          x = Math.max(...others) + spacingX;
+        }
+        nodePositions.set(id, { x, y: (maxGen - gen) * spacingY });
+      }
+    }
+
+    // --- 6. Build Nodes ---
     const newNodes: Node[] = [];
     members.forEach((member) => {
-      const pos = memberPositions.get(member.id);
+      const pos = nodePositions.get(member.id);
       if (!pos) return;
       newNodes.push({
         id: member.id,
-        position: pos,
-        data: { ...member, isSelected: false },
         type: "familyMember",
+        data: { ...member, isSelected: false },
+        position: pos,
+        draggable: true,
       });
     });
 
-    // --- 6. Build Edges ---
+    // --- 7. Build Edges ---
     const newEdges: Edge[] = [];
     // Parent-child edges
     members.forEach((member) => {
@@ -405,7 +639,7 @@ export const useFamilyTree = (treeId: string) => {
     });
 
     return { nodes: newNodes, edges: newEdges };
-  }, [members]);
+  }, [members, isUsingCustomPositions, customPositions]);
 
   useEffect(() => {
     setNodes(graphData.nodes);
@@ -488,23 +722,77 @@ export const useFamilyTree = (treeId: string) => {
         );
         if (sharedParents.length > 0) return false;
       }
-      // A spouse cannot be a sibling (if they share at least one parent)
-      if (
-        potentialSpouse &&
-        potentialSpouse.parents.length > 0 &&
-        memberInModal.parents.length > 0
-      ) {
-        const sharedParents = potentialSpouse.parents.filter((p) =>
-          memberInModal.parents.includes(p)
-        );
-        if (sharedParents.length > 0) return false;
-      }
       // A spouse cannot be a spouse already
       if (memberInModal.spouseId === spouseId) return false;
       return true;
     },
     [memberInModal, members, isEditModalOpen, editingMember]
   );
+
+  // Save custom node positions
+  const saveCustomPositions = useCallback(async () => {
+    if (!user) return;
+    setSavingPositions(true);
+    setError(null);
+    try {
+      const token = await user.getIdToken();
+      const positions = nodes.map((node) => ({
+        memberId: node.id,
+        x: Math.round(node.position.x),
+        y: Math.round(node.position.y),
+      }));
+
+      console.log("Saving positions - treeId:", treeId);
+      console.log("Saving positions - positions:", positions);
+      console.log("Saving positions - request body:", {
+        nodePositions: positions,
+      });
+
+      const res = await fetch(`/api/family-trees/${treeId}/save-positions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ nodePositions: positions }),
+      });
+
+      console.log("Save positions response status:", res.status);
+      const responseData = await res.json();
+      console.log("Save positions response data:", responseData);
+
+      if (!res.ok) {
+        throw new Error(responseData.error || "Failed to save positions");
+      }
+
+      setCustomPositions(positions);
+      setIsUsingCustomPositions(true);
+      toast({
+        title: "Success",
+        description: "Custom layout saved successfully.",
+      });
+    } catch (err: any) {
+      console.error("Error in saveCustomPositions:", err);
+      setError(err.message || "Unknown error");
+      toast({
+        title: "Error saving layout",
+        description: err.message,
+        variant: "destructive",
+      });
+    } finally {
+      setSavingPositions(false);
+    }
+  }, [treeId, user, nodes, toast]);
+
+  // Reset to auto layout
+  const resetToAutoLayout = useCallback(() => {
+    setIsUsingCustomPositions(false);
+    setCustomPositions([]);
+    toast({
+      title: "Layout Reset",
+      description: "Tree layout has been reset to automatic positioning.",
+    });
+  }, [toast]);
 
   return {
     members,
@@ -516,7 +804,7 @@ export const useFamilyTree = (treeId: string) => {
     isEditModalOpen,
     editingMember,
     newMember,
-    onNodesChange,
+    onNodesChange: onNodesChangeWithLogging,
     onEdgesChange,
     onNodeClick,
     setMembers,
@@ -533,5 +821,576 @@ export const useFamilyTree = (treeId: string) => {
     loading,
     error,
     validation: { isValidParent, isValidChild, isValidSpouse },
+    customPositions,
+    isUsingCustomPositions,
+    setCustomPositions,
+    setIsUsingCustomPositions,
+    savingPositions,
+    setSavingPositions,
+    saveCustomPositions,
+    loadCustomPositions,
+    resetToAutoLayout,
+  };
+};
+
+export const usePublicFamilyTree = (treeId: string) => {
+  const [members, setMembers] = useState<FamilyMember[]>([]);
+  const [nodes, setNodes, onNodesChange] = useNodesState([]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [customPositions, setCustomPositions] = useState<
+    Array<{ memberId: string; x: number; y: number }>
+  >([]);
+  const [isUsingCustomPositions, setIsUsingCustomPositions] = useState(false);
+
+  // Load custom positions from tree data
+  const loadCustomPositions = useCallback((treeData: any) => {
+    console.log(
+      "Loading custom positions from tree data:",
+      treeData.nodePositions
+    );
+    if (treeData.nodePositions && treeData.nodePositions.length > 0) {
+      setCustomPositions(treeData.nodePositions);
+      setIsUsingCustomPositions(true);
+      console.log(
+        "Custom positions loaded:",
+        treeData.nodePositions.length,
+        "positions"
+      );
+    } else {
+      setCustomPositions([]);
+      setIsUsingCustomPositions(false);
+      console.log("No custom positions found, using auto-layout");
+    }
+  }, []);
+
+  // Fetch public tree data
+  const refreshMembers = useCallback(async () => {
+    console.log(
+      "usePublicFamilyTree: Starting to fetch data for treeId:",
+      treeId
+    );
+    setLoading(true);
+    setError(null);
+    try {
+      // Fetch public family tree data
+      const treeRes = await fetch(`/api/family-trees/${treeId}/public`);
+      console.log("usePublicFamilyTree: API response status:", treeRes.status);
+
+      if (!treeRes.ok) {
+        const errorData = await treeRes.json();
+        console.error("usePublicFamilyTree: API Error:", errorData);
+        throw new Error(errorData.error || "Failed to fetch family tree");
+      }
+
+      const treeData = await treeRes.json();
+      console.log("usePublicFamilyTree: Tree data received:", treeData);
+
+      // Load custom positions if they exist
+      loadCustomPositions(treeData);
+
+      // Set members from the public API response
+      const membersData = treeData.members || [];
+      console.log(
+        "usePublicFamilyTree: Setting members:",
+        membersData.length,
+        "members"
+      );
+      setMembers(membersData);
+    } catch (err: any) {
+      console.error("usePublicFamilyTree: Error:", err);
+      setError(err.message || "Unknown error");
+    } finally {
+      setLoading(false);
+    }
+  }, [treeId, loadCustomPositions]);
+
+  useEffect(() => {
+    if (treeId) {
+      refreshMembers();
+    }
+  }, [treeId, refreshMembers]);
+
+  const onNodeClick = useCallback(
+    (_: any, node: Node) => {
+      setSelectedNodeId(selectedNodeId === node.id ? null : node.id);
+    },
+    [selectedNodeId]
+  );
+
+  // Track node position changes and log them
+  const onNodesChangeWithLogging = useCallback(
+    (changes: any) => {
+      console.log("Node changes:", changes);
+      onNodesChange(changes);
+    },
+    [onNodesChange]
+  );
+
+  // Generate nodes and edges from members
+  useEffect(() => {
+    console.log(
+      "usePublicFamilyTree: Generating nodes and edges for",
+      members.length,
+      "members"
+    );
+    if (members.length === 0) {
+      console.log("usePublicFamilyTree: No members, clearing nodes and edges");
+      setNodes([]);
+      setEdges([]);
+      return;
+    }
+
+    // Create a map for quick member lookup
+    const memberMap = new Map(members.map((m) => [m.id, m]));
+    console.log(
+      "usePublicFamilyTree: Member map created with",
+      memberMap.size,
+      "entries"
+    );
+
+    // Clear existing nodes and edges
+    const newNodes: Node[] = [];
+    const newEdges: Edge[] = [];
+
+    // If using custom positions, create nodes directly from saved positions
+    if (isUsingCustomPositions && customPositions.length > 0) {
+      console.log("usePublicFamilyTree: Using custom positions for layout");
+
+      // Create nodes from custom positions
+      customPositions.forEach((pos) => {
+        const member = memberMap.get(pos.memberId);
+        if (member) {
+          newNodes.push({
+            id: pos.memberId,
+            type: "familyMember",
+            position: { x: pos.x, y: pos.y },
+            data: { member },
+          });
+        }
+      });
+
+      // Add any members that don't have custom positions (fallback to auto-layout)
+      const membersWithCustomPos = new Set(
+        customPositions.map((pos) => pos.memberId)
+      );
+      const membersWithoutCustomPos = members.filter(
+        (member) => !membersWithCustomPos.has(member.id)
+      );
+
+      if (membersWithoutCustomPos.length > 0) {
+        console.log(
+          "usePublicFamilyTree: Found members without custom positions, using auto-layout for them:",
+          membersWithoutCustomPos.length
+        );
+
+        // Use auto-layout for members without custom positions
+        // Helper function to assign generation
+        function assignGeneration(
+          id: string,
+          visited = new Set<string>()
+        ): number {
+          if (visited.has(id)) return 0;
+          visited.add(id);
+
+          const member = memberMap.get(id);
+          if (!member) return 0;
+
+          // If member has parents, get generation from parent + 1
+          if (member.parents && member.parents.length > 0) {
+            const parentGenerations = member.parents.map((parentId) =>
+              assignGeneration(parentId, visited)
+            );
+            return Math.max(...parentGenerations) + 1;
+          }
+
+          // If member has children, get generation from child - 1
+          if (member.children && member.children.length > 0) {
+            const childGenerations = member.children.map((childId) =>
+              assignGeneration(childId, visited)
+            );
+            return Math.min(...childGenerations) - 1;
+          }
+
+          // Default generation
+          return 0;
+        }
+
+        // Assign generations to members without custom positions
+        const generations = new Map<string, number>();
+        membersWithoutCustomPos.forEach((member) => {
+          generations.set(member.id, assignGeneration(member.id));
+        });
+
+        // Group members by generation
+        const generationGroups = new Map<number, string[]>();
+        membersWithoutCustomPos.forEach((member) => {
+          const gen = generations.get(member.id) || 0;
+          if (!generationGroups.has(gen)) {
+            generationGroups.set(gen, []);
+          }
+          generationGroups.get(gen)!.push(member.id);
+        });
+
+        // Sort generations
+        const sortedGenerations = Array.from(generationGroups.keys()).sort(
+          (a, b) => a - b
+        );
+
+        // Layout function for a group of siblings
+        function layoutGroup(
+          siblingGroup: string[],
+          gen: number,
+          xStart: number,
+          newNodes: Node[]
+        ): number {
+          const groupWidth =
+            siblingGroup.length * 200 + (siblingGroup.length - 1) * 50;
+          let currentX = xStart - groupWidth / 2;
+
+          siblingGroup.forEach((memberId, index) => {
+            const member = memberMap.get(memberId);
+            if (!member) return;
+
+            // Auto-layout
+            const y = gen * 250;
+            newNodes.push({
+              id: memberId,
+              type: "familyMember",
+              position: { x: currentX, y },
+              data: { member },
+            });
+
+            currentX += 250; // Space between siblings
+          });
+
+          return xStart + groupWidth / 2;
+        }
+
+        // Layout each generation for members without custom positions
+        let currentX = 0;
+        sortedGenerations.forEach((gen) => {
+          const generationMembers = generationGroups.get(gen) || [];
+
+          // Group siblings together
+          const siblingGroups: string[][] = [];
+          const processed = new Set<string>();
+
+          generationMembers.forEach((memberId) => {
+            if (processed.has(memberId)) return;
+
+            const member = memberMap.get(memberId);
+            if (!member) return;
+
+            // Find all siblings (members with same parents)
+            const siblings = generationMembers.filter((siblingId) => {
+              const sibling = memberMap.get(siblingId);
+              if (!sibling) return false;
+
+              // Check if they have the same parents
+              const memberParents = member.parents || [];
+              const siblingParents = sibling.parents || [];
+
+              if (memberParents.length === 0 && siblingParents.length === 0)
+                return false;
+
+              return memberParents.some((p) => siblingParents.includes(p));
+            });
+
+            siblingGroups.push(siblings);
+            siblings.forEach((s) => processed.add(s));
+          });
+
+          // Handle members that weren't processed (no siblings or orphaned)
+          const unprocessedMembers = generationMembers.filter(
+            (memberId) => !processed.has(memberId)
+          );
+          if (unprocessedMembers.length > 0) {
+            unprocessedMembers.forEach((memberId) => {
+              const member = memberMap.get(memberId);
+              if (member) {
+                // Create individual node for unprocessed member
+                const y = gen * 250;
+                newNodes.push({
+                  id: memberId,
+                  type: "familyMember",
+                  position: { x: currentX, y },
+                  data: { member },
+                });
+                currentX += 250;
+              }
+            });
+          }
+
+          // Layout each sibling group
+          siblingGroups.forEach((siblingGroup) => {
+            currentX = layoutGroup(siblingGroup, gen, currentX, newNodes);
+            currentX += 100; // Space between sibling groups
+          });
+        });
+      }
+    } else {
+      // Use auto-layout when no custom positions are available
+      console.log(
+        "usePublicFamilyTree: Using auto-layout (no custom positions)"
+      );
+
+      // Helper function to get couple key
+      function getCoupleKey(id: string) {
+        const member = memberMap.get(id);
+        if (!member) return null;
+        if (member.spouseId) {
+          const sortedIds = [id, member.spouseId].sort();
+          return `couple-${sortedIds[0]}-${sortedIds[1]}`;
+        }
+        return `single-${id}`;
+      }
+
+      // Helper function to assign generation
+      function assignGeneration(
+        id: string,
+        visited = new Set<string>()
+      ): number {
+        if (visited.has(id)) return 0;
+        visited.add(id);
+
+        const member = memberMap.get(id);
+        if (!member) return 0;
+
+        // If member has parents, get generation from parent + 1
+        if (member.parents && member.parents.length > 0) {
+          const parentGenerations = member.parents.map((parentId) =>
+            assignGeneration(parentId, visited)
+          );
+          return Math.max(...parentGenerations) + 1;
+        }
+
+        // If member has children, get generation from child - 1
+        if (member.children && member.children.length > 0) {
+          const childGenerations = member.children.map((childId) =>
+            assignGeneration(childId, visited)
+          );
+          return Math.min(...childGenerations) - 1;
+        }
+
+        // Default generation
+        return 0;
+      }
+
+      // Assign generations to all members
+      const generations = new Map<string, number>();
+      members.forEach((member) => {
+        generations.set(member.id, assignGeneration(member.id));
+      });
+
+      console.log(
+        "usePublicFamilyTree: Generation assignments:",
+        Array.from(generations.entries()).map(([id, gen]) => {
+          const member = memberMap.get(id);
+          return `${member?.firstName} ${member?.lastName}: generation ${gen}`;
+        })
+      );
+
+      // Group members by generation
+      const generationGroups = new Map<number, string[]>();
+      members.forEach((member) => {
+        const gen = generations.get(member.id) || 0;
+        if (!generationGroups.has(gen)) {
+          generationGroups.set(gen, []);
+        }
+        generationGroups.get(gen)!.push(member.id);
+      });
+
+      console.log(
+        "usePublicFamilyTree: Generation groups:",
+        Array.from(generationGroups.entries()).map(([gen, memberIds]) => {
+          const memberNames = memberIds.map((id) => {
+            const member = memberMap.get(id);
+            return `${member?.firstName} ${member?.lastName}`;
+          });
+          return `Generation ${gen}: ${memberNames.join(", ")}`;
+        })
+      );
+
+      // Sort generations
+      const sortedGenerations = Array.from(generationGroups.keys()).sort(
+        (a, b) => a - b
+      );
+
+      // Layout function for a group of siblings
+      function layoutGroup(
+        siblingGroup: string[],
+        gen: number,
+        xStart: number,
+        newNodes: Node[]
+      ): number {
+        const groupWidth =
+          siblingGroup.length * 200 + (siblingGroup.length - 1) * 50;
+        let currentX = xStart - groupWidth / 2;
+
+        siblingGroup.forEach((memberId, index) => {
+          const member = memberMap.get(memberId);
+          if (!member) return;
+
+          // Auto-layout
+          const y = gen * 250;
+          newNodes.push({
+            id: memberId,
+            type: "familyMember",
+            position: { x: currentX, y },
+            data: { member },
+          });
+
+          currentX += 250; // Space between siblings
+        });
+
+        return xStart + groupWidth / 2;
+      }
+
+      // Layout each generation
+      let currentX = 0;
+      sortedGenerations.forEach((gen) => {
+        const generationMembers = generationGroups.get(gen) || [];
+        console.log(
+          `usePublicFamilyTree: Processing generation ${gen} with ${generationMembers.length} members`
+        );
+
+        // Group siblings together
+        const siblingGroups: string[][] = [];
+        const processed = new Set<string>();
+
+        generationMembers.forEach((memberId) => {
+          if (processed.has(memberId)) return;
+
+          const member = memberMap.get(memberId);
+          if (!member) return;
+
+          // Find all siblings (members with same parents)
+          const siblings = generationMembers.filter((siblingId) => {
+            const sibling = memberMap.get(siblingId);
+            if (!sibling) return false;
+
+            // Check if they have the same parents
+            const memberParents = member.parents || [];
+            const siblingParents = sibling.parents || [];
+
+            if (memberParents.length === 0 && siblingParents.length === 0)
+              return false;
+
+            return memberParents.some((p) => siblingParents.includes(p));
+          });
+
+          console.log(
+            `usePublicFamilyTree: Found sibling group for ${member.firstName} ${member.lastName}:`,
+            siblings.length,
+            "members"
+          );
+          siblingGroups.push(siblings);
+          siblings.forEach((s) => processed.add(s));
+        });
+
+        // Handle members that weren't processed (no siblings or orphaned)
+        const unprocessedMembers = generationMembers.filter(
+          (memberId) => !processed.has(memberId)
+        );
+        if (unprocessedMembers.length > 0) {
+          console.log(
+            `usePublicFamilyTree: Found ${unprocessedMembers.length} unprocessed members in generation ${gen}:`,
+            unprocessedMembers
+          );
+          unprocessedMembers.forEach((memberId) => {
+            const member = memberMap.get(memberId);
+            if (member) {
+              // Create individual node for unprocessed member
+              const y = gen * 250;
+              newNodes.push({
+                id: memberId,
+                type: "familyMember",
+                position: { x: currentX, y },
+                data: { member },
+              });
+              currentX += 250;
+            }
+          });
+        }
+
+        // Layout each sibling group
+        siblingGroups.forEach((siblingGroup) => {
+          currentX = layoutGroup(siblingGroup, gen, currentX, newNodes);
+          currentX += 100; // Space between sibling groups
+        });
+      });
+    }
+
+    // Create edges for parent-child relationships
+    members.forEach((member) => {
+      if (member.parents && member.parents.length > 0) {
+        member.parents.forEach((parentId) => {
+          const parent = memberMap.get(parentId);
+          if (parent) {
+            newEdges.push({
+              id: `parent-${parentId}-${member.id}`,
+              source: parentId,
+              target: member.id,
+              type: "smoothstep",
+              style: { stroke: "#FFFFFF", strokeWidth: 2 },
+            });
+          }
+        });
+      }
+    });
+
+    // Create edges for spouse relationships
+    const spouseEdges = new Set<string>();
+    members.forEach((member) => {
+      if (member.spouseId) {
+        const spouse = memberMap.get(member.spouseId);
+        if (spouse) {
+          const edgeId = [member.id, member.spouseId].sort().join("-");
+          if (!spouseEdges.has(edgeId)) {
+            spouseEdges.add(edgeId);
+            newEdges.push({
+              id: `spouse-${edgeId}`,
+              source: member.id,
+              target: member.spouseId,
+              type: "smoothstep",
+              style: {
+                stroke: "#FF69B4",
+                strokeWidth: 2,
+                strokeDasharray: "5,5",
+              },
+            });
+          }
+        }
+      }
+    });
+
+    setNodes(newNodes);
+    setEdges(newEdges);
+    console.log(
+      "usePublicFamilyTree: Generated",
+      newNodes.length,
+      "nodes and",
+      newEdges.length,
+      "edges"
+    );
+  }, [members, customPositions, isUsingCustomPositions, setNodes, setEdges]);
+
+  const selectedMember = members.find((m) => m.id === selectedNodeId);
+
+  return {
+    members,
+    nodes,
+    edges,
+    selectedMember,
+    onNodesChange: onNodesChangeWithLogging,
+    onEdgesChange,
+    onNodeClick,
+    loading,
+    error,
+    refreshMembers,
+    isUsingCustomPositions,
   };
 };

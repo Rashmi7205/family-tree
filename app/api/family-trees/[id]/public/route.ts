@@ -13,10 +13,14 @@ export async function GET(
     await connectDB();
     let tree: IFamilyTree | null = null;
     if (mongoose.Types.ObjectId.isValid(params.id)) {
-      tree = await FamilyTree.findOne({
+      const treeDoc = await FamilyTree.findOne({
         _id: new mongoose.Types.ObjectId(params.id),
         isPublic: true,
-      }).lean<IFamilyTree>();
+      });
+
+      if (treeDoc) {
+        tree = treeDoc.toObject();
+      }
     }
     if (!tree) {
       return NextResponse.json(
@@ -24,6 +28,11 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    console.log("Public API - Raw tree data:", tree);
+    console.log("Public API - createdAt field:", tree.createdAt);
+    console.log("Public API - createdAt type:", typeof tree.createdAt);
+
     // Get members and relationships
     const members = await Member.find({ familyTreeId: params.id }).lean<
       IMember[]
@@ -50,6 +59,10 @@ export async function GET(
       members: members.map((m) => ({ ...m, id: m._id.toString() })),
       relationships: populatedRelationships,
     };
+
+    console.log("Public API - Final result:", result);
+    console.log("Public API - Result createdAt:", result.createdAt);
+
     return NextResponse.json(result);
   } catch (error) {
     console.error("Get public family tree error:", error);

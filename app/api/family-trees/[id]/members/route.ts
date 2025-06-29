@@ -39,7 +39,7 @@ export async function POST(
     const decodedToken = await verifyFirebaseToken(token);
     if (!decodedToken) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-      
+
     }
     await connectDB();
     const user = await User.findOne({ uid: decodedToken.user_id });
@@ -76,7 +76,6 @@ export async function POST(
         { status: 400 }
       );
     }
-    console.log(spouseId);
     if (spouseId) {
       // A spouse cannot be a direct parent or child.
       if (parents.includes(spouseId) || children.includes(spouseId)) {

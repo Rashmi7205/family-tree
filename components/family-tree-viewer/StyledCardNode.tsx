@@ -44,7 +44,8 @@ const getPaletteByGender = (
 };
 
 const StyledCardNode = ({ data }: { data: any }) => {
-  const palette = getPaletteByGender(data.gender);
+  const member = data.member || data;
+  const palette = getPaletteByGender(member.gender);
   return (
     <div className="relative">
       <Handle
@@ -72,15 +73,15 @@ const StyledCardNode = ({ data }: { data: any }) => {
                 palette.imageBg
               )}
             >
-              {data.profileImageUrl ? (
+              {member.profileImageUrl ? (
                 <img
-                  src={data.profileImageUrl}
-                  alt={`${data.firstName} ${data.lastName}`}
+                  src={member.profileImageUrl}
+                  alt={`${member.firstName} ${member.lastName}`}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <span className={cn("text-2xl sm:text-3xl", palette.initial)}>
-                  {data.firstName?.[0]}
+                  {member.firstName?.[0]}
                 </span>
               )}
             </div>
@@ -93,14 +94,14 @@ const StyledCardNode = ({ data }: { data: any }) => {
                 palette.name
               )}
             >
-              {data.firstName} {data.lastName}
+              {member.firstName} {member.lastName}
             </div>
             <div className={cn("text-xs sm:text-sm capitalize", palette.meta)}>
-              {data.gender}
+              {member.gender}
             </div>
             <div className={cn("text-xs sm:text-sm mt-1", palette.meta)}>
-              {data.birthDate
-                ? new Date(data.birthDate)
+              {member.birthDate
+                ? new Date(member.birthDate)
                     .toLocaleDateString("en-GB", {
                       day: "2-digit",
                       month: "short",

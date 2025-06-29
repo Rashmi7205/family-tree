@@ -5,13 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useFamilyTree } from "@/components/family-tree-viewer/hooks";
 import { Header } from "@/components/family-tree-viewer/Header";
-import { Sidebar } from "@/components/family-tree-viewer/Sidebar";
 import { TreeCanvas } from "@/components/family-tree-viewer/TreeCanvas";
 import { AddEditMemberModal } from "@/components/family-tree-viewer/AddEditMemberModal";
 import { Button } from "@/components/ui/button";
 import { Loader, PageLoader } from "@/components/ui/loader";
-import { PanelLeftClose, PanelLeftOpen, Download, Share2 } from "lucide-react";
 import { ReactFlowProvider, useReactFlow } from "reactflow";
+import { Download, Share2, Copy } from "lucide-react";
 import {
   Sheet,
   SheetContent,
@@ -31,10 +30,16 @@ import {
   AlertDialogCancel,
   AlertDialogAction,
 } from "@/components/ui/alert-dialog";
-import * as htmlToImage from "html-to-image";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import ExportPoster from "@/components/family-tree/ExportPoster";
 import { useAuth } from "@/lib/auth/auth-context";
-import { ShareDialog } from "@/components/family-tree-viewer/ShareDialog";
+import { Icons } from "@/components/icons";
+import QR from "qr.js";
 
 const malePalette = {
   // Blue shades similar to ADC4FF
@@ -294,11 +299,14 @@ function DemotreeContent() {
     validation,
     loading,
     error,
+    saveCustomPositions,
+    resetToAutoLayout,
+    isUsingCustomPositions,
+    savingPositions,
   } = useFamilyTree(treeId);
 
   const reactFlowRef = useRef<HTMLDivElement>(null);
   const { setViewport, fitView } = useReactFlow();
-  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(true);
   const [showInfo, setShowInfo] = useState(false);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMember, setSheetMember] = useState<any>(null);
@@ -307,6 +315,16 @@ function DemotreeContent() {
   const { user } = useAuth();
   const router = useRouter();
   const [shareOpen, setShareOpen] = useState(false);
+  const url = typeof window !== "undefined" ? window.location.href : "";
+
+  // Compute share URL for public tree view
+  let shareUrl = url;
+  if (url && /\/trees\/[\w-]+(?!\/public$)/.test(url)) {
+    // If on a /trees/[id] page but not already /public, append /public
+    if (!url.endsWith("/public")) {
+      shareUrl = url.replace(/(\/trees\/[\w-]+)(\/public)?$/, "$1/public");
+    }
+  }
 
   useEffect(() => {
     if (!user) {
@@ -320,13 +338,17 @@ function DemotreeContent() {
   useEffect(() => {
     const fetchTree = async () => {
       try {
-        const token = await user?.accessToken;
         const res = await fetch(`/api/family-trees/${treeId}`, {
           credentials: "include",
-          headers: token ? { Authorization: `Bearer ${token}` } : {},
         });
         if (!res.ok) return;
         const data = await res.json();
+        console.log("Private tree view - treeData received:", data);
+        console.log("Private tree view - createdAt field:", data.createdAt);
+        console.log(
+          "Private tree view - createdAt type:",
+          typeof data.createdAt
+        );
         setTreeData(data);
       } catch {}
     };
@@ -435,31 +457,64 @@ function DemotreeContent() {
         createdDate={treeData?.createdAt}
         onResetView={resetView}
         extraActions={
-          <Button onClick={exportAsPoster} variant="outline" size="sm">
-            Export as Poster
-          </Button>
+          <>
+            {/* Share Button - Icon only on desktop */}
+            <Button
+              onClick={() => setShareOpen(true)}
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 min-w-[44px] min-h-[44px] hidden md:flex"
+              title="Share"
+            >
+              <Share2 className="h-5 w-5" />
+            </Button>
+
+            {/* Share Button - With text on mobile */}
+            <Button
+              onClick={() => setShareOpen(true)}
+              variant="outline"
+              size="sm"
+              className="md:hidden"
+            >
+              <Share2 className="w-4 h-4 mr-2" />
+              Share
+            </Button>
+
+            {/* Export Button - Icon only on desktop */}
+            <Button
+              onClick={exportAsPoster}
+              variant="outline"
+              size="icon"
+              className="h-10 w-10 min-w-[44px] min-h-[44px] hidden md:flex"
+              title="Export as Poster"
+            >
+              <Download className="h-5 w-5" />
+            </Button>
+
+            {/* Export Button - With text on mobile */}
+            <Button
+              onClick={exportAsPoster}
+              variant="outline"
+              size="sm"
+              className="md:hidden"
+            >
+              <Download className="w-4 h-4 mr-2" />
+              Export as Poster
+            </Button>
+          </>
         }
-        viewOnly={true}
-        onShareOpen={() => setIsSidebarCollapsed(true)}
-      />
-
-      <Button
-        variant="outline"
-        size="icon"
-        className="absolute top-20 left-4 z-20"
-        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-      >
-        {isSidebarCollapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-      </Button>
-
-      <Sidebar
-        isCollapsed={isSidebarCollapsed}
+        viewOnly={false}
+        onShareOpen={() => {}}
+        onSaveLayout={saveCustomPositions}
+        onResetLayout={resetToAutoLayout}
+        isUsingCustomPositions={isUsingCustomPositions}
+        savingPositions={savingPositions}
         members={members}
-        selectedMember={selectedMember ?? null}
+        edges={edges}
+        selectedMember={selectedMember}
         onAddMember={() => setIsAddModalOpen(true)}
         onEditMember={openEditModal}
         onDeleteMember={deleteMember}
-        edges={edges}
       />
 
       <TreeCanvas
@@ -470,6 +525,9 @@ function DemotreeContent() {
         onNodeClick={handleNodeClick}
         reactFlowRef={reactFlowRef}
         showInfo={showInfo}
+        nodesDraggable={true}
+        nodesConnectable={false}
+        elementsSelectable={true}
       />
 
       {/* Loading overlay for operations */}
@@ -534,9 +592,135 @@ function DemotreeContent() {
           />
         </div>
       )}
+
+      {/* Share Dialog */}
+      <Dialog open={shareOpen} onOpenChange={setShareOpen}>
+        <DialogContent className="max-w-sm w-full p-0 overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Share2 className="w-5 h-5 text-green-600" /> Share this Tree
+            </DialogTitle>
+          </DialogHeader>
+          <ShareDialogContent url={shareUrl} />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
+
+// Share Dialog Content Component
+const ShareDialogContent = ({ url }: { url: string }) => {
+  const [copied, setCopied] = useState(false);
+  const shareText = encodeURIComponent("Check out this family tree!");
+
+  const QRSVG = ({ value, size = 160 }: { value: string; size?: number }) => {
+    const qr = new QR(value);
+    const cells = qr.modules || [];
+    const cellSize = size / cells.length;
+    return (
+      <svg
+        width={size}
+        height={size}
+        viewBox={`0 0 ${size} ${size}`}
+        className="rounded-lg"
+      >
+        <rect width={size} height={size} fill="#fff" />
+        {cells.flatMap((row: boolean[], rIdx: number) =>
+          row.map((cell: boolean, cIdx: number) =>
+            cell ? (
+              <rect
+                key={`${rIdx}-${cIdx}`}
+                x={cIdx * cellSize}
+                y={rIdx * cellSize}
+                width={cellSize}
+                height={cellSize}
+                fill="#111"
+              />
+            ) : null
+          )
+        )}
+      </svg>
+    );
+  };
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1200);
+  };
+
+  return (
+    <div className="flex flex-col items-center gap-4 p-4">
+      <div className="p-3 rounded-xl bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-800 shadow-inner">
+        <QRSVG value={url} size={160} />
+      </div>
+      <div className="flex flex-col sm:flex-row mt-3 w-full gap-2 items-center">
+        <input
+          value={url}
+          readOnly
+          className="flex-1 text-xs rounded border border-gray-300 dark:border-gray-700 p-2 bg-gray-100 dark:bg-gray-800 font-mono"
+        />
+        <Button
+          variant="outline"
+          onClick={handleCopy}
+          className="w-full sm:w-auto flex items-center justify-center gap-1"
+        >
+          <Copy className="w-4 h-4 text-green-600" />
+          {copied ? "Copied!" : "Copy Link"}
+        </Button>
+      </div>
+      <div className="border-t border-gray-100 dark:border-gray-800 my-2 w-full" />
+      <div className="px-4 flex flex-col items-center gap-1 w-full">
+        <span className="text-xs text-gray-500">Share via</span>
+        <div className="flex justify-center gap-3">
+          {[
+            {
+              icon: Icons.twitter,
+              color: "#1DA1F2",
+              url: `https://twitter.com/intent/tweet?text=${shareText}&url=${encodeURIComponent(
+                url
+              )}`,
+              label: "Twitter",
+            },
+            {
+              icon: Icons.facebook,
+              color: "#1877F3",
+              url: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(
+                url
+              )}`,
+              label: "Facebook",
+            },
+            {
+              icon: Icons.whatsapp,
+              color: "#25D366",
+              url: `https://wa.me/?text=${shareText}%20${encodeURIComponent(
+                url
+              )}`,
+              label: "WhatsApp",
+            },
+          ].map((item) => (
+            <a
+              key={item.label}
+              href={item.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex flex-col items-center group focus:outline-none focus:ring-2 rounded p-1"
+              title={`Share on ${item.label}`}
+            >
+              <item.icon className="w-8 h-8" style={{ color: item.color }} />
+              <span className="text-[10px] mt-1" style={{ color: item.color }}>
+                {item.label}
+              </span>
+            </a>
+          ))}
+        </div>
+      </div>
+      <div className="text-center text-[10px] text-gray-500 dark:text-gray-400 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 w-full">
+        Anyone with this link can view this tree.
+      </div>
+    </div>
+  );
+};
 
 export default function DemotreePage() {
   return (

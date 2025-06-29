@@ -1,7 +1,14 @@
+import Image from "next/image";
+
 const About = () => {
   return (
-    <section id="about" className="py-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="about" className="py-20 relative overflow-hidden">
+      {/* Background Glow Effect */}
+      <div className="absolute inset-0 bg-gradient-to-t from-blue-500/10 via-purple-500/5 to-transparent"></div>
+      <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-[800px] h-[400px] bg-gradient-to-t from-blue-600/20 via-purple-600/15 to-transparent rounded-full blur-3xl"></div>
+      <div className="absolute bottom-0 right-0 w-[600px] h-[300px] bg-gradient-to-t from-purple-500/15 via-blue-500/10 to-transparent rounded-full blur-2xl"></div>
+
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="lg:grid lg:grid-cols-2 lg:gap-16 items-center">
           {/* Left Text Section */}
           <div>
@@ -21,14 +28,14 @@ const About = () => {
               <p>
                 From uncovering long-lost connections to preserving cherished
                 memories, we help you piece together the threads that weave your
-                family’s unique heritage — making it easy for future generations
+                family's unique heritage — making it easy for future generations
                 to understand where they came from.
               </p>
               <p>
                 Whether you're starting your family tree for the first time or
                 you're an experienced genealogist, our platform is built for
                 you. We combine heritage, technology, and design so you can
-                explore, save, and share your family’s legacy.
+                explore, save, and share your family's legacy.
               </p>
             </div>
 
@@ -61,15 +68,17 @@ const About = () => {
             </div>
           </div>
 
-          {/* Right Image Section */}
+          {/* Right Animated Image Section */}
           <div className="mt-12 lg:mt-0">
             <div className="relative">
-              <img
+              <Image
+                src="/assets/family-animated.gif"
+                alt="Animated family exploring heritage together"
+                width={600}
+                height={400}
                 className="w-full rounded-2xl shadow-2xl"
-                src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
-                alt="Family exploring heritage together"
+                priority
               />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/10 to-transparent rounded-2xl"></div>
             </div>
           </div>
         </div>

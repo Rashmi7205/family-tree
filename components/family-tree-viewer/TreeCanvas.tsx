@@ -25,6 +25,9 @@ interface TreeCanvasProps {
   onNodeClick: (event: any, node: Node) => void;
   reactFlowRef: RefObject<HTMLDivElement>;
   showInfo: boolean;
+  nodesDraggable?: boolean;
+  nodesConnectable?: boolean;
+  elementsSelectable?: boolean;
 }
 
 export const TreeCanvas: FC<TreeCanvasProps> = ({
@@ -35,6 +38,9 @@ export const TreeCanvas: FC<TreeCanvasProps> = ({
   onNodeClick,
   reactFlowRef,
   showInfo,
+  nodesDraggable = false,
+  nodesConnectable = false,
+  elementsSelectable = false,
 }) => {
   return (
     <div className="w-full h-full" ref={reactFlowRef}>
@@ -46,6 +52,9 @@ export const TreeCanvas: FC<TreeCanvasProps> = ({
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
           nodeTypes={nodeTypes}
+          nodesDraggable={nodesDraggable}
+          nodesConnectable={nodesConnectable}
+          elementsSelectable={elementsSelectable}
           fitView
           fitViewOptions={{ padding: 0.4, minZoom: 0.2, maxZoom: 1 }}
           minZoom={0.1}

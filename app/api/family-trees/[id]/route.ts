@@ -37,7 +37,7 @@ export async function GET(
     const tree = await FamilyTree.findOne({
       _id: params.id,
       userId: user.id,
-    }).lean<IFamilyTree>();
+    });
 
     if (!tree) {
       return NextResponse.json(
@@ -45,6 +45,13 @@ export async function GET(
         { status: 404 }
       );
     }
+
+    // Convert to plain object to include timestamps
+    const treeData = tree.toObject();
+
+    console.log("API - Raw tree data:", treeData);
+    console.log("API - createdAt field:", treeData.createdAt);
+    console.log("API - createdAt type:", typeof treeData.createdAt);
 
     // Get members and relationships
     const members = await Member.find({ familyTreeId: params.id }).lean<
@@ -70,11 +77,15 @@ export async function GET(
     );
 
     const result = {
-      ...tree,
-      id: tree._id.toString(),
+      ...treeData,
+      id: treeData._id.toString(),
       members: members.map((m) => ({ ...m, id: m._id.toString() })),
       relationships: populatedRelationships,
+      nodePositions: treeData.nodePositions || [],
     };
+
+    console.log("API - Final result:", result);
+    console.log("API - Result createdAt:", result.createdAt);
 
     return NextResponse.json(result);
   } catch (error) {
