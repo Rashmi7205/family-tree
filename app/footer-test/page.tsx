@@ -1,7 +1,4 @@
 "use client";
-
-import { FooterDemo } from "@/components/ui/footer-demo";
-
 export default function FooterTestPage() {
   return (
     <div className="min-h-screen bg-background">
@@ -14,7 +11,6 @@ export default function FooterTestPage() {
         <div className="space-y-8">
           <div>
             <h2 className="text-2xl font-semibold mb-4">New UI Footer</h2>
-            <FooterDemo />
           </div>
         </div>
       </div>
