@@ -23,7 +23,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import toast from "react-hot-toast";
+import { useToast } from "@/components/ui/use-toast";
 import { Icons } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import AddressSelector from "@/components/profile/address-selector";
@@ -76,13 +76,24 @@ export default function ProfileCompletionStep({
 
   const watchedDate = watch("dateOfBirth");
 
+  const { toast } = useToast();
+
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user || !selectedAddress) {
-      toast.error("Please complete all fields including address selection.");
+      toast({
+        title: "Incomplete Fields",
+        description: "Please complete all fields including address selection.",
+        variant: "destructive",
+      });
       return;
     }
 
     setIsLoading(true);
+    const loadingToast = toast({
+      title: "Completing Profile...",
+      description: "Please wait while we save your profile.",
+      variant: "default",
+    });
 
     try {
       const token = await user.getIdToken();
@@ -100,21 +111,34 @@ export default function ProfileCompletionStep({
 
       if (!response.ok) {
         const error = await response.json();
-        throw new Error(error.error || "Failed to complete profile");
+        toast({
+          title: "Profile Completion Failed",
+          description: error.error || "Failed to complete profile",
+          variant: "destructive",
+        });
+        return;
       }
 
-      toast.success("Your profile has been completed successfully.");
+      toast({
+        title: "Profile Completed",
+        description: "Your profile has been completed successfully.",
+        variant: "success",
+      });
 
       await refreshUserProfile();
       onCompleted();
     } catch (error) {
-      const errorMessage =
-        error instanceof Error
-          ? error.message
-          : "Profile completion failed. Please try again later.";
-      toast.error(errorMessage);
+      toast({
+        title: "Profile Completion Failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Profile completion failed. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
+      toast.dismiss(loadingToast);
     }
   };
 

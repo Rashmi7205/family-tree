@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Icons } from "@/components/icons";
 
 interface Member {
   id: string;
@@ -136,36 +137,7 @@ const SearchComponent = () => {
               </svg>
             </div>
             <div id="search-icon" className="absolute left-5 top-[15px]">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                viewBox="0 0 24 24"
-                strokeWidth="2"
-                strokeLinejoin="round"
-                strokeLinecap="round"
-                height="24"
-                fill="none"
-                className="feather feather-search"
-              >
-                <circle stroke="url(#search)" r="8" cy="11" cx="11"></circle>
-                <line
-                  stroke="url(#searchl)"
-                  y2="16.65"
-                  y1="22"
-                  x2="16.65"
-                  x1="22"
-                ></line>
-                <defs>
-                  <linearGradient gradientTransform="rotate(50)" id="search">
-                    <stop stopColor="#f8e7f8" offset="0%"></stop>
-                    <stop stopColor="#b6a9b7" offset="50%"></stop>
-                  </linearGradient>
-                  <linearGradient id="searchl">
-                    <stop stopColor="#b6a9b7" offset="0%"></stop>
-                    <stop stopColor="#837484" offset="50%"></stop>
-                  </linearGradient>
-                </defs>
-              </svg>
+              <Icons.userRoundSearch className="w-6 h-6 text-primary" />
             </div>
           </div>
         </div>

@@ -40,6 +40,8 @@ export default function SignUpForm() {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
@@ -120,7 +122,7 @@ export default function SignUpForm() {
           <Label htmlFor="displayName">Full Name</Label>
           <Input
             id="displayName"
-            placeholder="John Doe"
+            placeholder="Enter your full name"
             autoComplete="name"
             disabled={isLoading}
             {...register("displayName")}
@@ -134,7 +136,7 @@ export default function SignUpForm() {
           <Input
             id="email"
             type="email"
-            placeholder="name@example.com"
+            placeholder="Enter your email address"
             autoComplete="email"
             disabled={isLoading}
             {...register("email")}
@@ -145,26 +147,60 @@ export default function SignUpForm() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
-          <Input
-            id="password"
-            type="password"
-            autoComplete="new-password"
-            disabled={isLoading}
-            {...register("password")}
-          />
+          <div className="relative">
+            <Input
+              id="password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Enter your password"
+              autoComplete="new-password"
+              disabled={isLoading}
+              {...register("password")}
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <Icons.eyeOff className="w-5 h-5" />
+              ) : (
+                <Icons.eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
           {errors.password && (
             <p className="text-sm text-red-500">{errors.password.message}</p>
           )}
         </div>
         <div className="space-y-2">
           <Label htmlFor="confirmPassword">Confirm Password</Label>
-          <Input
-            id="confirmPassword"
-            type="password"
-            autoComplete="new-password"
-            disabled={isLoading}
-            {...register("confirmPassword")}
-          />
+          <div className="relative">
+            <Input
+              id="confirmPassword"
+              type={showConfirmPassword ? "text" : "password"}
+              placeholder="Confirm your password"
+              autoComplete="new-password"
+              disabled={isLoading}
+              {...register("confirmPassword")}
+            />
+            <button
+              type="button"
+              tabIndex={-1}
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 focus:outline-none"
+              onClick={() => setShowConfirmPassword((v) => !v)}
+              aria-label={
+                showConfirmPassword ? "Hide password" : "Show password"
+              }
+            >
+              {showConfirmPassword ? (
+                <Icons.eyeOff className="w-5 h-5" />
+              ) : (
+                <Icons.eye className="w-5 h-5" />
+              )}
+            </button>
+          </div>
           {errors.confirmPassword && (
             <p className="text-sm text-red-500">
               {errors.confirmPassword.message}

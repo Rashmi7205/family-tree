@@ -10,6 +10,7 @@ import { useAuth } from "@/lib/auth/auth-context";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { ManualOTPInput } from "@/components/ui/manual-otp-input";
 import { motion, AnimatePresence } from "framer-motion";
+import { useToast } from "@/components/ui/use-toast";
 
 const phoneSchema = z.object({
   phoneNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, {
@@ -37,6 +38,7 @@ export default function PhoneVerificationStep({
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState("");
+  const { toast } = useToast();
 
   // Phone input handler
   function handlePhoneChange(val: string) {
@@ -57,6 +59,12 @@ export default function PhoneVerificationStep({
     }
     if (!user) return;
     setIsLoading(true);
+    const loadingToast = toast({
+      title: "Sending OTP...",
+      description:
+        "Please wait while we send a verification code to your phone.",
+      variant: "default",
+    });
     try {
       const token = await user.getIdToken();
       const response = await fetch("/api/onboarding/send-otp", {
@@ -69,21 +77,33 @@ export default function PhoneVerificationStep({
       });
       const result = await response.json();
       if (!response.ok) {
-        setServerError(result.error || "Failed to send OTP");
+        toast({
+          title: "Failed to send OTP",
+          description: result.error || "Failed to send OTP",
+          variant: "destructive",
+        });
         return;
       }
       setOtp("");
       setStep("otp");
       startCooldown();
-      setSuccessMsg("A verification code has been sent to your phone.");
+      toast({
+        title: "OTP Sent",
+        description: "A verification code has been sent to your phone.",
+        variant: "success",
+      });
     } catch (error) {
-      setServerError(
-        error instanceof Error
-          ? error.message
-          : "Failed to send OTP. Please try again later."
-      );
+      toast({
+        title: "Failed to send OTP",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to send OTP. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
+      toast.dismiss(loadingToast);
     }
   }
 
@@ -99,6 +119,11 @@ export default function PhoneVerificationStep({
     }
     if (!user) return;
     setIsLoading(true);
+    const loadingToast = toast({
+      title: "Verifying OTP...",
+      description: "Please wait while we verify your code.",
+      variant: "default",
+    });
     try {
       const token = await user.getIdToken();
       const response = await fetch("/api/onboarding/verify-otp", {
@@ -111,19 +136,31 @@ export default function PhoneVerificationStep({
       });
       const result = await response.json();
       if (!response.ok) {
-        setServerError(result.error || "Invalid OTP");
+        toast({
+          title: "Invalid OTP",
+          description: result.error || "Invalid OTP",
+          variant: "destructive",
+        });
         return;
       }
-      setSuccessMsg("Your phone number has been verified successfully.");
+      toast({
+        title: "Phone Verified",
+        description: "Your phone number has been verified successfully.",
+        variant: "success",
+      });
       setTimeout(() => onVerified(phoneNumber), 1000);
     } catch (error) {
-      setServerError(
-        error instanceof Error
-          ? error.message
-          : "Verification failed. Please try again later."
-      );
+      toast({
+        title: "Verification failed",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Verification failed. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
+      toast.dismiss(loadingToast);
     }
   }
 
@@ -132,6 +169,11 @@ export default function PhoneVerificationStep({
     setIsResending(true);
     setServerError(null);
     setSuccessMsg(null);
+    const loadingToast = toast({
+      title: "Resending OTP...",
+      description: "Please wait while we resend the verification code.",
+      variant: "default",
+    });
     try {
       if (!user) return;
       const token = await user.getIdToken();
@@ -145,20 +187,32 @@ export default function PhoneVerificationStep({
       });
       const result = await response.json();
       if (!response.ok) {
-        setServerError(result.error || "Failed to resend OTP");
+        toast({
+          title: "Failed to resend OTP",
+          description: result.error || "Failed to resend OTP",
+          variant: "destructive",
+        });
         return;
       }
       setOtp("");
       startCooldown();
-      setSuccessMsg("A new verification code has been sent to your phone.");
+      toast({
+        title: "OTP Resent",
+        description: "A new verification code has been sent to your phone.",
+        variant: "success",
+      });
     } catch (error) {
-      setServerError(
-        error instanceof Error
-          ? error.message
-          : "Failed to resend OTP. Please try again later."
-      );
+      toast({
+        title: "Failed to resend OTP",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Failed to resend OTP. Please try again later.",
+        variant: "destructive",
+      });
     } finally {
       setIsResending(false);
+      toast.dismiss(loadingToast);
     }
   }
 
@@ -184,7 +238,7 @@ export default function PhoneVerificationStep({
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white dark:bg-slate-900 rounded-xl shadow-lg p-6 md:p-8 flex flex-col gap-8 animate-fade-in">
+    <div className="w-full max-w-md mx-auto  rounded-xl shadow-lg   flex flex-col gap-8 animate-fade-in">
       <AnimatePresence mode="wait">
         {step === "phone" && (
           <motion.form

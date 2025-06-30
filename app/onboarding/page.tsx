@@ -34,8 +34,8 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-2xl bg-white dark:bg-slate-950 p-8 rounded-lg shadow-lg">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-900 flex flex-col items-center justify-center">
+      <div className="w-full max-w-lg sm:max-w-xl md:max-w-2xl bg-white dark:bg-slate-950 rounded-lg shadow-lg mx-auto my-[20px]">
         <OnboardingFlow user={user} userProfile={userProfile} />
       </div>
     </div>

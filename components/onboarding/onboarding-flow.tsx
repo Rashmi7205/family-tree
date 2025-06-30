@@ -51,18 +51,18 @@ export default function OnboardingFlow({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-4xl mx-auto">
+      <div className="container mx-auto">
+        <div className="w-full max-w-md sm:max-w-lg md:max-w-2xl lg:max-w-4xl mx-auto  flex flex-col gap-4">
           {/* Header */}
           <motion.div
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="text-center mb-8"
+            className="text-center mb-4"
           >
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 dark:text-white mb-2">
               Complete Your Profile
             </h1>
-            <p className="text-gray-600 dark:text-gray-400">
+            <p className="text-gray-600 dark:text-gray-400 text-xs sm:text-sm md:text-base">
               Just a few more steps to get you started
             </p>
           </motion.div>
@@ -72,14 +72,16 @@ export default function OnboardingFlow({
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="mb-8"
+              className="mb-4 flex justify-center"
             >
-              <OnboardingProgress currentStep={currentStep} />
+              <div className="w-full max-w-xs sm:max-w-md md:max-w-lg">
+                <OnboardingProgress currentStep={currentStep} />
+              </div>
             </motion.div>
           )}
 
           {/* Step Content */}
-          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl p-8">
+          <div className="rounded-2xl shadow-xl w-full flex flex-col gap-4">
             <AnimatePresence mode="wait">
               {currentStep === "phone" && (
                 <motion.div
@@ -89,6 +91,7 @@ export default function OnboardingFlow({
                   animate="visible"
                   exit="exit"
                   transition={{ duration: 0.3 }}
+                  className="flex flex-col gap-4"
                 >
                   <PhoneVerificationStep onVerified={handlePhoneVerified} />
                 </motion.div>
@@ -102,6 +105,7 @@ export default function OnboardingFlow({
                   animate="visible"
                   exit="exit"
                   transition={{ duration: 0.3 }}
+                  className="flex flex-col gap-4"
                 >
                   <ProfileCompletionStep onCompleted={handleProfileCompleted} />
                 </motion.div>
@@ -115,6 +119,7 @@ export default function OnboardingFlow({
                   animate="visible"
                   exit="exit"
                   transition={{ duration: 0.3 }}
+                  className="flex flex-col gap-4"
                 >
                   <OnboardingSuccess />
                 </motion.div>

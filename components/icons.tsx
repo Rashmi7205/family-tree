@@ -11,6 +11,11 @@ import {
   Shield,
   LoaderPinwheelIcon as Spinner,
   User,
+  UserRoundSearch,
+  BadgeInfo,
+  Eye,
+  EyeIcon,
+  EyeOff,
 } from "lucide-react";
 
 export const Icons = {
@@ -56,4 +61,8 @@ export const Icons = {
   shield: Shield,
   spinner: Spinner,
   user: User,
+  userRoundSearch: UserRoundSearch,
+  badgeInfo: BadgeInfo,
+  eye:EyeIcon,
+  eyeOff:EyeOff
 };

@@ -6,11 +6,11 @@ import {
   Twitter,
   Facebook,
   Instagram,
-  Mail,
   Phone,
   MapPin,
   Send,
 } from "lucide-react";
+import { Icons } from "@/components/icons";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -62,7 +62,7 @@ const Footer = () => {
 
   const contactInfo = [
     {
-      icon: <Mail className="h-5 w-5" />,
+      icon: <Icons.mail className="h-5 w-5" />,
       label: "Email",
       value: "contact@familytreeexplorer.com",
       href: "mailto:contact@familytreeexplorer.com",
@@ -221,7 +221,7 @@ const Footer = () => {
                       id="firstName"
                       name="firstName"
                       type="text"
-                      placeholder="John"
+                      placeholder="Enter your first name"
                       className="w-full"
                       value={formData.firstName}
                       onChange={handleInputChange}
@@ -239,7 +239,7 @@ const Footer = () => {
                       id="lastName"
                       name="lastName"
                       type="text"
-                      placeholder="Doe"
+                      placeholder="Enter your last name"
                       className="w-full"
                       value={formData.lastName}
                       onChange={handleInputChange}
@@ -259,7 +259,7 @@ const Footer = () => {
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="john.doe@example.com"
+                    placeholder="Enter your email address"
                     className="w-full"
                     value={formData.email}
                     onChange={handleInputChange}
@@ -278,7 +278,7 @@ const Footer = () => {
                     id="subject"
                     name="subject"
                     type="text"
-                    placeholder="How can we help?"
+                    placeholder="Subject of your message"
                     className="w-full"
                     value={formData.subject}
                     onChange={handleInputChange}
@@ -296,7 +296,7 @@ const Footer = () => {
                   <Textarea
                     id="message"
                     name="message"
-                    placeholder="Tell us about your family tree project..."
+                    placeholder="Type your message here..."
                     className="w-full min-h-[120px]"
                     value={formData.message}
                     onChange={handleInputChange}
@@ -335,7 +335,7 @@ const Footer = () => {
           >
             <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
               <Image
-                src="/assets/logo.webp"
+                src="/assets/logo.jpg"
                 height={120}
                 width={120}
                 alt="Durga Dham Family tree"

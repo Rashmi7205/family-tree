@@ -1,8 +1,38 @@
-// This is a placeholder implementation
-// In production, you would use a service like SendGrid, Mailgun, or AWS SES
+// Utility to send email using Gmail SMTP
+export async function sendMail({
+  to,
+  subject,
+  html,
+  text,
+}: {
+  to: string;
+  subject: string;
+  html: string;
+  text?: string;
+}) {
+  const nodemailer = (await import("nodemailer")).default;
+
+  const transporter = nodemailer.createTransport({
+    service: "gmail",
+    auth: {
+      user: process.env.GMAIL_USER,
+      pass: process.env.GMAIL_PASS,
+    },
+  });
+
+  const mailOptions = {
+    from: process.env.GMAIL_USER,
+    to,
+    subject,
+    html,
+    text,
+  };
+
+  return transporter.sendMail(mailOptions);
+}
 
 export async function sendVerificationEmail(email: string, token: string) {
-  const verificationUrl = `${process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${token}`
+  const verificationUrl = `${process.env.NEXTAUTH_URL}/api/auth/verify-email?token=${token}`;
 
   // Placeholder - implement with your email service
 
@@ -19,7 +49,7 @@ export async function sendVerificationEmail(email: string, token: string) {
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
-  const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password/${token}`
+  const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password/${token}`;
 
   // Placeholder - implement with your email servic
 

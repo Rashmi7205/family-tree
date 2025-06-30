@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb";
 import Contact from "@/models/Contact";
-import { sendEmail } from "@/lib/email/send-email";
+import connectDB from "@/lib/mongodb";
+import { sendMail } from "@/lib/email/send-email";
 
 export async function POST(request: NextRequest) {
   try {
     // Connect to database
-    await connectToDatabase();
+    await connectDB();
 
     // Parse request body
     const body = await request.json();
@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Send notification email to admin (optional)
     try {
-      await sendEmail({
+      await sendMail({
         to: process.env.ADMIN_EMAIL || "admin@familytreeexplorer.com",
         subject: `New Contact Form Submission: ${subject}`,
         html: `
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
     // Send confirmation email to user (optional)
     try {
-      await sendEmail({
+      await sendMail({
         to: email,
         subject:
           "Thank you for contacting us - Durga Dham Family Tree Explorer",
