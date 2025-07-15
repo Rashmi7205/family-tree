@@ -45,9 +45,11 @@ export const SaveLayoutButton: FC<SaveLayoutButtonProps> = ({
         {savingPositions ? (
           <ButtonLoader size="sm" />
         ) : (
-          <Save className="h-4 w-4 mr-2" />
+          <>
+            <Save className="h-4 w-4 mr-2" />
+            Save Layout
+          </>
         )}
-        Save Layout
       </Button>
 
       {/* Reset Button - Icon only on desktop */}

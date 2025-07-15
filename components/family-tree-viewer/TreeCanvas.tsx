@@ -12,6 +12,7 @@ import ReactFlow, {
 } from "reactflow";
 import "reactflow/dist/style.css";
 import StyledCardNode from "./StyledCardNode";
+import { useTheme } from "next-themes";
 
 const nodeTypes: NodeTypes = {
   familyMember: StyledCardNode,
@@ -42,12 +43,29 @@ export const TreeCanvas: FC<TreeCanvasProps> = ({
   nodesConnectable = false,
   elementsSelectable = false,
 }) => {
+  const { resolvedTheme } = useTheme();
+  // Use resolvedTheme to ensure correct color
+  const parentEdgeColor = resolvedTheme === "light" ? "#2563eb" : "#FFFFFF"; // blue-600 for parent-child
+  // Map edges to override parent-child color
+  const displayEdges = edges.map((edge) => {
+    if (edge.id.startsWith("parent-")) {
+      return {
+        ...edge,
+        style: {
+          ...(edge.style || {}),
+          stroke: parentEdgeColor,
+          strokeWidth: 2,
+        },
+      };
+    }
+    return edge;
+  });
   return (
     <div className="w-full h-full" ref={reactFlowRef}>
       <ReactFlowProvider>
         <ReactFlow
           nodes={nodes}
-          edges={edges}
+          edges={displayEdges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           onNodeClick={onNodeClick}
@@ -61,7 +79,7 @@ export const TreeCanvas: FC<TreeCanvasProps> = ({
           maxZoom={1.5}
           defaultEdgeOptions={{
             type: "smoothstep",
-            style: { stroke: "#FFFFFF", strokeWidth: 2 },
+            style: { stroke: parentEdgeColor, strokeWidth: 2 },
           }}
         >
           <Background color="#3405a3" gap={16} />
@@ -74,7 +92,7 @@ export const TreeCanvas: FC<TreeCanvasProps> = ({
               <h3 className="font-semibold text-sm mb-2">Graph Legend</h3>
               <div className="space-y-2 text-xs">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-0.5 bg-white"></div>
+                  <div className="w-3 h-0.5 bg-blue-600"></div>
                   <span>Parent → Child</span>
                 </div>
                 <div className="flex items-center gap-2">

@@ -17,6 +17,13 @@ import {
   parseISO,
 } from "date-fns";
 import { useAuth } from "@/lib/auth/auth-context";
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselPrevious,
+  CarouselNext,
+} from "@/components/ui/carousel";
 
 interface Member {
   _id: string;
@@ -125,56 +132,118 @@ export default function EventCalendar() {
           sideOffset={8}
           className={`w-64 p-0 border-none shadow-xl rounded-2xl overflow-hidden ${CONFETTI_BG}`}
         >
-          {members.map((member) => {
-            // Calculate age
-            const dob = parseISO(member.dob);
-            const today = new Date();
-            let age = today.getFullYear() - dob.getFullYear();
-            const m = today.getMonth() - dob.getMonth();
-            if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
-              age--;
-            }
-            // Conditionally set placeholder image
-            const imgSrc =
-              member.imageUrl ||
-              (member.gender === "male"
-                ? "/assets/man.png"
-                : member.gender === "female"
-                ? "/assets/women.png"
-                : "/assets/placeholder-user.jpg");
-            return (
-              <div
-                key={member._id}
-                className="flex flex-col items-center justify-center p-4 gap-2"
-              >
-                <div className="w-full flex items-center gap-2 text-base font-semibold text-pink-700 justify-center">
-                  <span role="img" aria-label="balloon">
-                    🎈
-                  </span>{" "}
-                  Happy Birthday, {member.name}!
-                </div>
-                <div className="my-2 flex items-center justify-center">
-                  <img
-                    src={imgSrc}
-                    alt={member.name}
-                    className="w-24 h-28 object-cover rounded-2xl border-4 border-white shadow-lg bg-gray-100"
-                  />
-                </div>
-                <div className="w-full text-center text-sm font-medium text-gray-700 flex items-center justify-center gap-1">
-                  He/she turning {age} today!{" "}
-                  <span role="img" aria-label="cake">
-                    🎂
-                  </span>
-                </div>
-                <Button
-                  asChild
-                  className="mt-3 w-full rounded-xl text-base font-bold py-2 bg-gradient-to-r from-pink-400 to-yellow-300 hover:from-pink-500 hover:to-yellow-400 shadow-md"
+          {members.length === 1 ? (
+            // Single member card
+            (() => {
+              const member = members[0];
+              const dob = parseISO(member.dob);
+              const today = new Date();
+              let age = today.getFullYear() - dob.getFullYear();
+              const m = today.getMonth() - dob.getMonth();
+              if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                age--;
+              }
+              const imgSrc =
+                member.imageUrl ||
+                (member.gender === "male"
+                  ? "/assets/man.png"
+                  : member.gender === "female"
+                  ? "/assets/woman.png"
+                  : "/assets/placeholder-user.jpg");
+              return (
+                <div
+                  key={member._id}
+                  className="flex flex-col items-center justify-center p-4 gap-2"
                 >
-                  <a href={`/trees/${member.familyTreeId}`}>View Tree</a>
-                </Button>
-              </div>
-            );
-          })}
+                  <div className="w-full flex items-center gap-2 text-base font-semibold text-pink-700 justify-center">
+                    <span role="img" aria-label="balloon">
+                      🎈
+                    </span>{" "}
+                    Happy Birthday, {member.name}!
+                  </div>
+                  <div className="my-2 flex items-center justify-center">
+                    <img
+                      src={imgSrc}
+                      alt={member.name}
+                      className="w-24 h-28 object-cover rounded-2xl border-4 border-white shadow-lg bg-gray-100"
+                    />
+                  </div>
+                  <div className="w-full text-center text-sm font-medium text-gray-700 flex items-center justify-center gap-1">
+                    He/she turning {age} today!{" "}
+                    <span role="img" aria-label="cake">
+                      🎂
+                    </span>
+                  </div>
+                  <Button
+                    asChild
+                    className="mt-3 w-full rounded-xl text-base font-bold py-2 bg-gradient-to-r from-pink-400 to-yellow-300 hover:from-pink-500 hover:to-yellow-400 shadow-md"
+                  >
+                    <a href={`/trees/${member.familyTreeId}`}>View Tree</a>
+                  </Button>
+                </div>
+              );
+            })()
+          ) : (
+            // Multiple members: Carousel
+            <div className="relative">
+              <Carousel>
+                <CarouselContent>
+                  {members.map((member) => {
+                    const dob = parseISO(member.dob);
+                    const today = new Date();
+                    let age = today.getFullYear() - dob.getFullYear();
+                    const m = today.getMonth() - dob.getMonth();
+                    if (m < 0 || (m === 0 && today.getDate() < dob.getDate())) {
+                      age--;
+                    }
+                    const imgSrc =
+                      member.imageUrl ||
+                      (member.gender === "male"
+                        ? "/assets/man.png"
+                        : member.gender === "female"
+                        ? "/assets/woman.png"
+                        : "/assets/placeholder-user.jpg");
+                    return (
+                      <CarouselItem key={member._id}>
+                        <div className="flex flex-col items-center justify-center p-4 gap-2">
+                          <div className="w-full flex items-center gap-2 text-base font-semibold text-pink-700 justify-center">
+                            <span role="img" aria-label="balloon">
+                              🎈
+                            </span>{" "}
+                            Happy Birthday, {member.name}!
+                          </div>
+                          <div className="my-2 flex items-center justify-center">
+                            <img
+                              src={imgSrc}
+                              alt={member.name}
+                              className="w-24 h-28 object-cover rounded-2xl border-4 border-white shadow-lg bg-gray-100"
+                            />
+                          </div>
+                          <div className="w-full text-center text-sm font-medium text-gray-700 flex items-center justify-center gap-1">
+                            He/she turning {age} today!{" "}
+                            <span role="img" aria-label="cake">
+                              🎂
+                            </span>
+                          </div>
+                          <Button
+                            asChild
+                            className="mt-3 w-full rounded-xl text-base font-bold py-2 bg-gradient-to-r from-pink-400 to-yellow-300 hover:from-pink-500 hover:to-yellow-400 shadow-md"
+                          >
+                            <a href={`/trees/${member.familyTreeId}`}>
+                              View Tree
+                            </a>
+                          </Button>
+                        </div>
+                      </CarouselItem>
+                    );
+                  })}
+                </CarouselContent>
+                {/* Add left and right navigation buttons */}
+                <CarouselPrevious className="left-2 top-1/2 -translate-y-1/2 z-10" />
+                <CarouselNext className="right-2 top-1/2 -translate-y-1/2 z-10" />
+              </Carousel>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
     );

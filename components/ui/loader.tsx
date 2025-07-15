@@ -202,10 +202,41 @@ export const PageLoader: React.FC<{ text?: string }> = ({ text }) => (
 export const ButtonLoader: React.FC<{ size?: "sm" | "md" | "lg" }> = ({
   size = "sm",
 }) => (
-  <div className="flex items-center gap-2">
-    <Loader size={size} className="text-current" />
-    <span>Loading...</span>
-  </div>
+  <span className="flex items-center justify-center w-4 h-4 animate-spin">
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 100 100"
+      width="100%"
+      height="100%"
+      fill="currentColor"
+      stroke="none"
+      className="single-loader"
+    >
+      <defs>
+        <rect
+          id="spinner"
+          x="46.5"
+          y="45"
+          width="6"
+          height="14"
+          rx="2"
+          ry="2"
+          transform="translate(0 -30)"
+        />
+      </defs>
+      {Array.from({ length: 9 }).map((_, i) => (
+        <use key={i} xlinkHref="#spinner" transform={`rotate(${i * 40} 50 50)`}>
+          <animate
+            attributeName="opacity"
+            values="0;1;0"
+            dur="1s"
+            begin={`${(i * (1 / 9)).toFixed(10)}s`}
+            repeatCount="indefinite"
+          />
+        </use>
+      ))}
+    </svg>
+  </span>
 );
 
 // Card loader component
