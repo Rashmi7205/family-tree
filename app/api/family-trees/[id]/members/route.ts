@@ -47,13 +47,16 @@ export async function POST(
     }
 
     // Use public/uploads directory to handle file upload
-    const uploadDir = path.join(process.cwd(), "public", "uploads");
-    if (!fs.existsSync(uploadDir)) {
-      fs.mkdirSync(uploadDir, { recursive: true });
-    }
+
 
     const formData = await request.formData();
     const file = formData.get("profileImage");
+    if (file && typeof file !== "string") {
+      const uploadDir = path.join(process.cwd(), "public", "uploads");
+      if (!fs.existsSync(uploadDir)) {
+        fs.mkdirSync(uploadDir, { recursive: true });
+      }
+    }
     let profileImageUrl: string | undefined = formData.get(
       "profileImageUrl"
     ) as string | undefined;
@@ -70,7 +73,7 @@ export async function POST(
       const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, "");
       const now = new Date().toISOString().replace(/[-:.TZ]/g, "");
       const filename = `${uuidv4()}_${now}_${safeName}`;
-      const filePath = path.join(uploadDir, filename);
+      const filePath = path.join("public", "uploads", filename);
 
       const arrayBuffer = await file.arrayBuffer();
       const buffer = Buffer.from(arrayBuffer);

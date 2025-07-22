@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { connectToDatabase } from "@/lib/mongodb";
 import Contact from "@/models/Contact";
+import connectDB from "@/lib/mongodb";
 
 export async function GET(request: NextRequest) {
   try {
     // TODO: Add proper authentication/authorization here
     // For now, this is a basic implementation
 
-    await connectToDatabase();
-
+    await connectDB();
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "10");
@@ -54,7 +53,7 @@ export async function PATCH(request: NextRequest) {
   try {
     // TODO: Add proper authentication/authorization here
 
-    await connectToDatabase();
+    await connectDB();
 
     const body = await request.json();
     const { contactId, status } = body;
