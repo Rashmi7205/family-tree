@@ -257,8 +257,7 @@ export default function EventCalendar() {
           </div>
         ) : (
           <Calendar
-            mode="single"
-            selected={currentMonth}
+            mode="default"
             month={currentMonth}
             onMonthChange={setCurrentMonth}
             showOutsideDays
@@ -267,6 +266,7 @@ export default function EventCalendar() {
               Day: ({ date }) => renderDay(date),
             }}
             className=""
+            isShowYear={false}
           />
         )}
       </div>

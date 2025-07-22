@@ -33,6 +33,8 @@ export async function POST(request: Request) {
     }
 
     // Update user with verified phone number
+    user.emailVerified = true;
+    user.phoneNumberVerified = true;
     user.phoneNumber = user.phoneNumberTemp
     user.phoneNumberTemp = undefined
     user.otp = undefined

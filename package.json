@@ -53,6 +53,7 @@
     "googlemaps": "latest",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
+    "india-pincode-search": "^1.0.2",
     "input-otp": "^1.4.1",
     "jsonwebtoken": "latest",
     "lucide-react": "^0.454.0",

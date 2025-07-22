@@ -46,7 +46,9 @@ const profileSchema = z.object({
   dateOfBirth: z.date({ required_error: "Date of birth is required" }),
   bloodGroup: z.string().min(1, { message: "Blood group is required" }),
   education: z.string().min(1, { message: "Education is required" }),
+  otherEducation: z.string().optional(),
   occupation: z.string().min(1, { message: "Occupation is required" }),
+  otherOccupation: z.string().optional(),
   maritalStatus: z.string().min(1, { message: "Marital status is required" }),
 });
 
@@ -75,7 +77,8 @@ export default function ProfileEditModal({
   const { refreshUserProfile } = useAuth();
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
-
+  const [showOtherEducation, setShowOtherEducation] = useState(false);
+  const [showOtherOccupation, setShowOtherOccupation] = useState(false);
 
   const {
     register,
@@ -92,7 +95,6 @@ export default function ProfileEditModal({
 
   useEffect(() => {
     if (isOpen && userProfile.profile) {
-      // Pre-populate form with existing data
       setValue("title", userProfile.profile.title || "");
       setValue("fullName", userProfile.profile.fullName || "");
       setValue("gender", userProfile.profile.gender || "");
@@ -106,11 +108,51 @@ export default function ProfileEditModal({
       setValue("education", userProfile.profile.education || "");
       setValue("occupation", userProfile.profile.occupation || "");
       setValue("maritalStatus", userProfile.profile.maritalStatus || "");
+      // Prepopulate otherEducation/otherOccupation if needed
+      if (
+        userProfile.profile.education &&
+        !educationOptions.includes(userProfile.profile.education)
+      ) {
+        setValue("education", "other");
+        setValue("otherEducation", userProfile.profile.education);
+      }
+      if (
+        userProfile.profile.occupation &&
+        !occupationOptions.includes(userProfile.profile.occupation)
+      ) {
+        setValue("occupation", "other");
+        setValue("otherOccupation", userProfile.profile.occupation);
+      }
     }
   }, [isOpen, userProfile, setValue]);
 
+  // Watch education and occupation for 'other'
+  const watchedEducation = watch("education");
+  const watchedOccupation = watch("occupation");
+
+  useEffect(() => {
+    setShowOtherEducation(watchedEducation === "other");
+    if (watchedEducation !== "other") setValue("otherEducation", "");
+  }, [watchedEducation, setValue]);
+  useEffect(() => {
+    setShowOtherOccupation(watchedOccupation === "other");
+    if (watchedOccupation !== "other") setValue("otherOccupation", "");
+  }, [watchedOccupation, setValue]);
+
   const onSubmit = async (data: ProfileFormValues) => {
     if (!user) return;
+
+    // Use manual input if 'other' is selected
+    const profileData = {
+      ...data,
+      dateOfBirth: data.dateOfBirth
+        ? format(data.dateOfBirth, "yyyy-MM-dd")
+        : "",
+      education:
+        data.education === "other" ? data.otherEducation : data.education,
+      occupation:
+        data.occupation === "other" ? data.otherOccupation : data.occupation,
+    };
 
     setIsLoading(true);
 
@@ -123,7 +165,7 @@ export default function ProfileEditModal({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          profile: data,
+          profile: profileData,
         }),
       });
 
@@ -155,8 +197,6 @@ export default function ProfileEditModal({
     { value: "mr", label: "Mr." },
     { value: "mrs", label: "Mrs." },
     { value: "ms", label: "Ms." },
-    { value: "dr", label: "Dr." },
-    { value: "prof", label: "Prof." },
     { value: "other", label: "Other" },
   ];
 
@@ -259,32 +299,18 @@ export default function ProfileEditModal({
 
             {/* Date of Birth */}
             <div className="space-y-2">
-              <Label>Date of Birth</Label>
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className={cn(
-                      "w-full justify-start text-left font-normal",
-                      !watchedDate && "text-muted-foreground"
-                    )}
-                  >
-                    <CalendarIcon className="mr-2 h-4 w-4" />
-                    {watchedDate ? format(watchedDate, "PPP") : "Pick a date"}
-                  </Button>
-                </PopoverTrigger>
-                <PopoverContent className="w-auto p-0">
-                  <Calendar
-                    mode="single"
-                    selected={watchedDate}
-                    onSelect={(date) => setValue("dateOfBirth", date!)}
-                    disabled={(date) =>
-                      date > new Date() || date < new Date("1900-01-01")
-                    }
-                    initialFocus
-                  />
-                </PopoverContent>
-              </Popover>
+              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+              <Input
+                id="dateOfBirth"
+                type="date"
+                value={watchedDate ? format(watchedDate, "yyyy-MM-dd") : ""}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setValue("dateOfBirth", val ? new Date(val) : new Date());
+                }}
+                max={format(new Date(), "yyyy-MM-dd")}
+                min="1900-01-01"
+              />
               {errors.dateOfBirth && (
                 <p className="text-sm text-red-500">
                   {errors.dateOfBirth.message}
@@ -330,15 +356,26 @@ export default function ProfileEditModal({
                 <SelectContent>
                   {educationOptions.map((option) => (
                     <SelectItem key={option} value={option}>
-                      {option}
+                      {option.charAt(0).toUpperCase() + option.slice(1)}
                     </SelectItem>
                   ))}
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              {showOtherEducation && (
+                <Input
+                  id="otherEducation"
+                  placeholder="Enter your education"
+                  {...register("otherEducation", { required: true })}
+                />
+              )}
               {errors.education && (
                 <p className="text-sm text-red-500">
                   {errors.education.message}
                 </p>
+              )}
+              {showOtherEducation && errors.otherEducation && (
+                <p className="text-sm text-red-500">Education is required</p>
               )}
             </div>
 
@@ -355,15 +392,26 @@ export default function ProfileEditModal({
                 <SelectContent>
                   {occupationOptions.map((option) => (
                     <SelectItem key={option} value={option}>
-                      {option}
+                      {option.charAt(0).toUpperCase() + option.slice(1)}
                     </SelectItem>
                   ))}
+                  <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              {showOtherOccupation && (
+                <Input
+                  id="otherOccupation"
+                  placeholder="Enter your occupation"
+                  {...register("otherOccupation", { required: true })}
+                />
+              )}
               {errors.occupation && (
                 <p className="text-sm text-red-500">
                   {errors.occupation.message}
                 </p>
+              )}
+              {showOtherOccupation && errors.otherOccupation && (
+                <p className="text-sm text-red-500">Occupation is required</p>
               )}
             </div>
 

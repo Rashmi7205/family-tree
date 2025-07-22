@@ -5,9 +5,6 @@ export const educationOptions = [
   "Master's Degree",
   "Doctorate (PhD)",
   "Professional Degree",
-  "Trade School",
-  "Some College",
-  "Other",
 ]
 
 export const occupationOptions = [
@@ -30,5 +27,4 @@ export const occupationOptions = [
   "Retired",
   "Unemployed",
   "Self-Employed",
-  "Other",
 ]

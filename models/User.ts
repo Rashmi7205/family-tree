@@ -13,6 +13,7 @@ export interface IUser extends Document {
   profileComplete: boolean;
   phoneNumber?: string;
   phoneNumberTemp?: string;
+  phoneNumberVerified?: boolean;
   profile?: {
     title?: string;
     fullName?: string;
@@ -59,6 +60,7 @@ const UserSchema: Schema = new Schema(
     profileComplete: { type: Boolean, default: false },
     phoneNumber: { type: String },
     phoneNumberTemp: { type: String },
+    phoneNumberVerified: { type: Boolean, default: false },
     profile: {
       title: { type: String },
       fullName: { type: String },

@@ -118,11 +118,8 @@ export const ExportPoster = React.forwardRef<HTMLDivElement, ExportPosterProps>(
       >
         <div className="text-center mb-8">
           <h1 className="text-6xl font-extrabold text-[#162936] mb-2">
-            Meet Our Family
+            {treeName}
           </h1>
-          <p className="text-2xl text-[#162936]/70 font-medium">
-            A glimpse across generations
-          </p>
         </div>
 
         <div className="bg-white/80 rounded-3xl p-4 shadow-xl flex items-center justify-center">

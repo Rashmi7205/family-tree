@@ -20,6 +20,15 @@ import { FamilyMember } from "./types";
 import { Badge } from "@/components/ui/badge";
 import { ButtonLoader } from "@/components/ui/loader";
 import { Textarea } from "../ui/textarea";
+import { Calendar } from "@/components/ui/calendar";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "@/components/ui/popover";
+import { CalendarIcon } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 interface AddEditMemberModalProps {
   isOpen: boolean;
@@ -237,7 +246,6 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                   setMemberData((prev: any) => ({ ...prev, gender: value }))
                 }
                 disabled={loading}
-                className="w-full"
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -251,19 +259,43 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
             </div>
             <div>
               <Label htmlFor="birthDate">Birth Date</Label>
-              <Input
-                id="birthDate"
-                type="date"
-                value={memberData.birthDate}
-                onChange={(e) =>
-                  setMemberData((prev: any) => ({
-                    ...prev,
-                    birthDate: e.target.value,
-                  }))
-                }
-                disabled={loading}
-                className="w-full"
-              />
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      "w-full justify-start text-left font-normal",
+                      !memberData.birthDate && "text-muted-foreground"
+                    )}
+                    type="button"
+                    disabled={loading}
+                  >
+                    <CalendarIcon className="mr-2 h-5 w-5" />
+                    {memberData.birthDate ? (
+                      format(new Date(memberData.birthDate), "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={
+                      memberData.birthDate
+                        ? new Date(memberData.birthDate)
+                        : undefined
+                    }
+                    onSelect={(date) =>
+                      setMemberData((prev: any) => ({
+                        ...prev,
+                        birthDate: date || undefined,
+                      }))
+                    }
+                    isShowYear={true}
+                  />
+                </PopoverContent>
+              </Popover>
             </div>
           </div>
           <div>
@@ -288,7 +320,6 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
               <Select
                 onValueChange={(val) => handleSelectChange("parents", val)}
                 disabled={loading}
-                className="w-full"
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select parent..." />
@@ -331,7 +362,6 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
               <Select
                 onValueChange={(val) => handleSelectChange("children", val)}
                 disabled={loading}
-                className="w-full"
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select child..." />
@@ -382,7 +412,6 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                   }))
                 }
                 disabled={loading}
-                className="w-full"
               >
                 <SelectTrigger>
                   <SelectValue>

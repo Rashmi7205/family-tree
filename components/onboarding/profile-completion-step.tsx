@@ -17,18 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Calendar } from "@/components/ui/calendar";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
 import { useToast } from "@/components/ui/use-toast";
 import { Icons } from "@/components/icons";
 import { cn } from "@/lib/utils";
 import AddressSelector from "@/components/profile/address-selector";
 import { motion } from "framer-motion";
 import { educationOptions, occupationOptions } from "../../constants";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
 
 const profileSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
@@ -39,7 +39,9 @@ const profileSchema = z.object({
   dateOfBirth: z.date({ required_error: "Date of birth is required" }),
   bloodGroup: z.string().min(1, { message: "Blood group is required" }),
   education: z.string().min(1, { message: "Education is required" }),
+  otherEducation: z.string().optional(),
   occupation: z.string().min(1, { message: "Occupation is required" }),
+  otherOccupation: z.string().optional(),
   maritalStatus: z.string().min(1, { message: "Marital status is required" }),
 });
 
@@ -59,10 +61,12 @@ interface AdminOption {
 export default function ProfileCompletionStep({
   onCompleted,
 }: ProfileCompletionStepProps) {
-  const { user, refreshUserProfile } = useAuth();
+  const { user, refreshUserProfile, userProfile } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
 
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
+  const [showOtherEducation, setShowOtherEducation] = useState(false);
+  const [showOtherOccupation, setShowOtherOccupation] = useState(false);
 
   const {
     register,
@@ -72,7 +76,31 @@ export default function ProfileCompletionStep({
     formState: { errors },
   } = useForm<ProfileFormValues>({
     resolver: zodResolver(profileSchema),
+    defaultValues: {
+      fullName: userProfile?.profile?.fullName || user?.displayName || "",
+    },
   });
+
+  useEffect(() => {
+    if (userProfile?.profile?.fullName) {
+      setValue("fullName", userProfile.profile.fullName);
+    } else if (user?.displayName) {
+      setValue("fullName", user.displayName);
+    }
+  }, [userProfile, user, setValue]);
+
+  // Watch education and occupation for 'other'
+  const watchedEducation = watch("education");
+  const watchedOccupation = watch("occupation");
+
+  useEffect(() => {
+    setShowOtherEducation(watchedEducation === "other");
+    if (watchedEducation !== "other") setValue("otherEducation", "");
+  }, [watchedEducation, setValue]);
+  useEffect(() => {
+    setShowOtherOccupation(watchedOccupation === "other");
+    if (watchedOccupation !== "other") setValue("otherOccupation", "");
+  }, [watchedOccupation, setValue]);
 
   const watchedDate = watch("dateOfBirth");
 
@@ -87,6 +115,15 @@ export default function ProfileCompletionStep({
       });
       return;
     }
+
+    // Use manual input if 'other' is selected
+    const profileData = {
+      ...data,
+      education:
+        data.education === "other" ? data.otherEducation : data.education,
+      occupation:
+        data.occupation === "other" ? data.otherOccupation : data.occupation,
+    };
 
     setIsLoading(true);
     const loadingToast = toast({
@@ -104,7 +141,7 @@ export default function ProfileCompletionStep({
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          profile: data,
+          profile: profileData,
           address: selectedAddress,
         }),
       });
@@ -122,7 +159,7 @@ export default function ProfileCompletionStep({
       toast({
         title: "Profile Completed",
         description: "Your profile has been completed successfully.",
-        variant: "success",
+        variant: "default",
       });
 
       await refreshUserProfile();
@@ -138,7 +175,7 @@ export default function ProfileCompletionStep({
       });
     } finally {
       setIsLoading(false);
-      toast.dismiss(loadingToast);
+      loadingToast.dismiss();
     }
   };
 
@@ -230,6 +267,11 @@ export default function ProfileCompletionStep({
               placeholder="Enter your full name"
               {...register("fullName")}
             />
+            {userProfile?.profile?.fullName && (
+              <p className="text-sm text-green-600">
+                Current: {userProfile.profile.fullName}
+              </p>
+            )}
             {errors.fullName && (
               <p className="text-sm text-red-500">{errors.fullName.message}</p>
             )}
@@ -267,7 +309,7 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.4 }}
             className="space-y-2"
           >
-            <Label>Date of Birth</Label>
+            <Label htmlFor="dateOfBirth">Date of Birth</Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -276,26 +318,35 @@ export default function ProfileCompletionStep({
                     "w-full justify-start text-left font-normal",
                     !watchedDate && "text-muted-foreground"
                   )}
+                  type="button"
                 >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {watchedDate ? format(watchedDate, "PPP") : "Pick a date"}
+                  <CalendarIcon className="mr-2 h-5 w-5" />
+                  {watchedDate ? (
+                    format(watchedDate, "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
                   selected={watchedDate}
-                  onSelect={(date) => setValue("dateOfBirth", date!)}
-                  disabled={(date) =>
-                    date > new Date() || date < new Date("1900-01-01")
+                  onSelect={(date) =>
+                    setValue("dateOfBirth", date, { shouldValidate: true })
                   }
+                  disabled={(date) => {
+                    const min = new Date("1900-01-01");
+                    const max = new Date();
+                    return date < min || date > max;
+                  }}
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
             {errors.dateOfBirth && (
               <p className="text-sm text-red-500">
-                {errors.dateOfBirth.message}
+                {errors.dateOfBirth.message as string}
               </p>
             )}
           </motion.div>
@@ -342,13 +393,24 @@ export default function ProfileCompletionStep({
               <SelectContent>
                 {educationOptions.map((option) => (
                   <SelectItem key={option} value={option}>
-                    {option}
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
                   </SelectItem>
                 ))}
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+            {showOtherEducation && (
+              <Input
+                id="otherEducation"
+                placeholder="Enter your education"
+                {...register("otherEducation", { required: true })}
+              />
+            )}
             {errors.education && (
               <p className="text-sm text-red-500">{errors.education.message}</p>
+            )}
+            {showOtherEducation && errors.otherEducation && (
+              <p className="text-sm text-red-500">Education is required</p>
             )}
           </motion.div>
 
@@ -367,15 +429,26 @@ export default function ProfileCompletionStep({
               <SelectContent>
                 {occupationOptions.map((option) => (
                   <SelectItem key={option} value={option}>
-                    {option}
+                    {option.charAt(0).toUpperCase() + option.slice(1)}
                   </SelectItem>
                 ))}
+                <SelectItem value="other">Other</SelectItem>
               </SelectContent>
             </Select>
+            {showOtherOccupation && (
+              <Input
+                id="otherOccupation"
+                placeholder="Enter your occupation"
+                {...register("otherOccupation", { required: true })}
+              />
+            )}
             {errors.occupation && (
               <p className="text-sm text-red-500">
                 {errors.occupation.message}
               </p>
+            )}
+            {showOtherOccupation && errors.otherOccupation && (
+              <p className="text-sm text-red-500">Occupation is required</p>
             )}
           </motion.div>
 

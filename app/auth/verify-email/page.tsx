@@ -56,7 +56,8 @@ export default function VerifyEmailPage() {
           <h1 className="text-2xl font-bold">Verify Your Email</h1>
           <p className="text-slate-600 dark:text-slate-400">
             We've sent a verification link to <strong>{user.email}</strong>.
-            Please check your inbox and click the link to verify your account.
+            Please check your inbox or spam and click the link to verify your
+            account. After verification, you can reload the page to continue.
           </p>
         </div>
 

@@ -450,6 +450,7 @@ function TreesResultsSection({
   setFilterBy,
   setSortBy,
   setViewMode,
+  setShowCreateModal,
 }: {
   filteredTrees: FamilyTree[];
   trees: FamilyTree[];
@@ -464,6 +465,7 @@ function TreesResultsSection({
   setFilterBy: (v: FilterOption) => void;
   setSortBy: (v: SortOption) => void;
   setViewMode: (v: ViewMode) => void;
+  setShowCreateModal: (v: boolean) => void;
 }) {
   return (
     <>
@@ -481,7 +483,7 @@ function TreesResultsSection({
                   Get started by creating your first family tree to begin
                   documenting your family history.
                 </p>
-                <Button onClick={() => setViewMode("grid") /* fallback */}>
+                <Button onClick={() => setShowCreateModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
                   Create Your First Tree
                 </Button>
@@ -864,6 +866,7 @@ export default function TreesPage() {
             setFilterBy={setFilterBy}
             setSortBy={setSortBy}
             setViewMode={setViewMode}
+            setShowCreateModal={setShowCreateModal}
           />
         </div>
       </main>

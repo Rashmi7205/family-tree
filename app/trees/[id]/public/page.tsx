@@ -381,7 +381,6 @@ function PublicTreeContent() {
         onNodeClick={handleNodeClick}
         reactFlowRef={reactFlowRef}
         showInfo={showInfo}
-        nodesDraggable={true}
         nodesConnectable={false}
         elementsSelectable={true}
       />
