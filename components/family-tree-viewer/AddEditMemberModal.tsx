@@ -66,15 +66,46 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
 
   if (!memberData) return null;
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 8 * 1024 * 1024) {
+        alert("Image size should be less than 8MB");
+        return;
+      }
+      if (!file.type.startsWith("image/")) {
+        alert("Please upload an image file");
+        return;
+      }
+      setProfileImagePreview(URL.createObjectURL(file));
       setProfileImageFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setProfileImagePreview(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      if (!isEditMode) {
+        // CREATE: Upload to /api/upload
+        const formData = new FormData();
+        formData.append("file", file);
+        try {
+          const res = await fetch("/api/upload", {
+            method: "POST",
+            body: formData,
+          });
+          if (!res.ok) throw new Error("Upload failed");
+          const data = await res.json();
+          setMemberData((prev: any) => ({
+            ...prev,
+            profileImageUrl: data.path,
+          }));
+        } catch (err) {
+          alert("Failed to upload image");
+          setProfileImagePreview(null);
+          setProfileImageFile(null);
+        }
+      } else {
+        // EDIT: Do not upload immediately, just set the file for later PUT
+        setMemberData((prev: any) => ({
+          ...prev,
+          profileImageUrl: undefined, // Will be set after PUT
+        }));
+      }
     } else {
       setProfileImageFile(null);
       setProfileImagePreview(
@@ -99,11 +130,11 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
     }));
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     const formData = new FormData();
     if (memberData) {
       Object.entries(memberData).forEach(([key, value]) => {
-        if (key === "profileImageUrl") return; // Don't send the old URL
+        if (key === "profileImageUrl" && !value) return; // Only send if present
         if (Array.isArray(value)) {
           value.forEach((v) => formData.append(key, v));
         } else if (value !== undefined && value !== null) {
@@ -111,10 +142,21 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
         }
       });
     }
-    if (profileImageFile) {
+    if (isEditMode && profileImageFile) {
+      // On edit, send the file as 'profileImage' to the member update endpoint
       formData.append("profileImage", profileImageFile);
+      // Call the update endpoint directly
+      try {
+        // You need to provide treeId and memberId in the parent component's onSubmit
+        // Here, we assume onSubmit(formData) will handle the actual PUT request
+        await onSubmit(formData);
+      } catch (err) {
+        alert("Failed to update member with image");
+      }
+    } else {
+      // On create, or edit without new image, just call onSubmit
+      onSubmit(formData);
     }
-    onSubmit(formData);
   };
 
   return (
@@ -328,7 +370,9 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="spouse">{memberData.gender === "female" ? "Husband" : "Spouse"}</Label>
+              <Label htmlFor="spouse">
+                {memberData.gender === "female" ? "Husband" : "Spouse"}
+              </Label>
               <Select
                 value={memberData.spouseId || "none"}
                 onValueChange={(val) =>
@@ -341,7 +385,18 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                 className="w-full"
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select spouse..." />
+                  <SelectValue>
+                    {memberData.spouseId && memberData.spouseId !== "none"
+                      ? (() => {
+                          const spouse = allMembers.find(
+                            (m) => m.id === memberData.spouseId
+                          );
+                          return spouse
+                            ? `${spouse.firstName} ${spouse.lastName}`
+                            : "Select spouse...";
+                        })()
+                      : "Select spouse..."}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="none">No spouse</SelectItem>

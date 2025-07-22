@@ -311,6 +311,7 @@ function DemotreeContent() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMember, setSheetMember] = useState<any>(null);
   const [showPoster, setShowPoster] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const router = useRouter();
@@ -383,26 +384,53 @@ function DemotreeContent() {
   }, [fitView, setSelectedNodeId]);
 
   // Add export as poster logic
-  const exportAsPoster = async () => {
+  const exportAsPoster = () => {
     setShowPoster(true);
-    setTimeout(async () => {
-      if (posterRef.current) {
-        const htmlToImage = await import("html-to-image");
-        const dataUrl = await htmlToImage.toPng(posterRef.current, {
-          quality: 1.0,
-        });
-        const link = document.createElement("a");
-        link.download = `family-tree-poster-${
-          new Date().toISOString().split("T")[0]
-        }.png`;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        setShowPoster(false);
-      }
-    }, 100);
+    setExporting(true);
   };
+
+  useEffect(() => {
+    if (showPoster && posterRef.current) {
+      const exportPoster = async () => {
+        try {
+          // Wait for images to load, replace broken images with a placeholder
+          const images = posterRef.current?.querySelectorAll("img") || [];
+          await Promise.all(
+            Array.from(images).map((img) =>
+              img.complete
+                ? Promise.resolve()
+                : new Promise((resolve) => {
+                    img.onload = resolve;
+                    img.onerror = () => {
+                      img.src = "/placeholder.svg";
+                      resolve();
+                    };
+                  })
+            )
+          );
+          const htmlToImage = await import("html-to-image");
+          const dataUrl = await htmlToImage.toPng(posterRef.current!, {
+            quality: 1.0,
+          });
+          const link = document.createElement("a");
+          link.download = `family-tree-poster-${
+            new Date().toISOString().split("T")[0]
+          }.png`;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (err) {
+          alert("Failed to export poster");
+          console.error(err);
+        } finally {
+          setShowPoster(false);
+          setExporting(false);
+        }
+      };
+      exportPoster();
+    }
+  }, [showPoster]);
 
   // Show page loader while initial loading
   if (loading && members.length === 0) {
@@ -482,6 +510,7 @@ function DemotreeContent() {
               size="icon"
               className="h-10 w-10 min-w-[44px] min-h-[44px] hidden md:flex"
               title="Export as Poster"
+              disabled={exporting}
             >
               <Download className="h-5 w-5" />
             </Button>
@@ -492,6 +521,7 @@ function DemotreeContent() {
               variant="outline"
               size="sm"
               className="md:hidden"
+              disabled={exporting}
             >
               <Download className="w-4 h-4 mr-2" />
               Export as Poster

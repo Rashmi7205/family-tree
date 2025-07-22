@@ -118,8 +118,9 @@ export function AddMemberModal({
       if (deathDate) {
         memberData.append("deathDate", deathDate.toISOString());
       }
-      if (selectedImage) {
-        memberData.append("profileImage", selectedImage);
+      // Only append the image URL, not the file
+      if (formData.profileImageUrl) {
+        memberData.append("profileImageUrl", formData.profileImageUrl);
       }
 
       const token = await user?.getIdToken();
@@ -176,11 +177,10 @@ export function AddMemberModal({
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
         toast.error("Image size should be less than 5MB");
         return;
       }
@@ -188,15 +188,25 @@ export function AddMemberModal({
         toast.error("Please upload an image file");
         return;
       }
-
-      setSelectedImage(file);
-      // Create preview URL
-      const imageUrl = URL.createObjectURL(file);
-      setPreviewUrl(imageUrl);
-      setFormData((prev) => ({
-        ...prev,
-        profileImageUrl: imageUrl,
-      }));
+      // Upload to /api/upload
+      const formData = new FormData();
+      formData.append("file", file);
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error("Upload failed");
+        const data = await res.json();
+        setPreviewUrl(data.path);
+        setFormData((prev) => ({
+          ...prev,
+          profileImageUrl: data.path,
+        }));
+        toast.success("Image uploaded successfully");
+      } catch (err) {
+        toast.error("Failed to upload image");
+      }
     }
   };
 

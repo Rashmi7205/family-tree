@@ -8,10 +8,11 @@ export interface FamilyMember {
   gender: "male" | "female" | "other";
   birthDate: string;
   familyTreeId: string;
-  bio?:string;
+  bio?: string;
   parents: string[];
   children: string[];
   spouseId: string | null;
+  profileImageUrl?: string;
 }
 
 export type FamilyMemberNode = Node<FamilyMember & { isSelected: boolean }>;

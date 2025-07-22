@@ -9,10 +9,9 @@ import {
   verifyFirebaseToken,
 } from "../../../../../lib/auth/verify-token";
 import User from "../../../../../models/User";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import fs from "fs";
+import path from "path";
 import { v4 as uuidv4 } from "uuid";
-import { existsSync } from "fs";
 
 const createMemberSchema = z.object({
   firstName: z.string().min(1),
@@ -39,7 +38,6 @@ export async function POST(
     const decodedToken = await verifyFirebaseToken(token);
     if (!decodedToken) {
       return NextResponse.json({ error: "Invalid token" }, { status: 401 });
-
     }
     await connectDB();
     const user = await User.findOne({ uid: decodedToken.user_id });
@@ -48,15 +46,45 @@ export async function POST(
       return NextResponse.json({ error: "User not found" }, { status: 404 });
     }
 
-    // Handle multipart form data
+    // Use public/uploads directory to handle file upload
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
     const formData = await request.formData();
+    const file = formData.get("profileImage");
+    let profileImageUrl: string | undefined = formData.get(
+      "profileImageUrl"
+    ) as string | undefined;
+
+    if (file && typeof file !== "string") {
+      const ext = path.extname(file.name).toLowerCase();
+      const allowedExts = [".png", ".jpg", ".jpeg", ".webp", ".svg"];
+      if (!allowedExts.includes(ext)) {
+        return NextResponse.json(
+          { error: "Only png, jpg, jpeg, webp, and svg files are allowed" },
+          { status: 400 }
+        );
+      }
+      const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, "");
+      const now = new Date().toISOString().replace(/[-:.TZ]/g, "");
+      const filename = `${uuidv4()}_${now}_${safeName}`;
+      const filePath = path.join(uploadDir, filename);
+
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      fs.writeFileSync(filePath, buffer);
+
+      profileImageUrl = `/uploads/${filename}`;
+    }
+
     const firstName = formData.get("firstName") as string;
     const lastName = formData.get("lastName") as string;
     const birthDate = formData.get("birthDate") as string | null;
     const deathDate = formData.get("deathDate") as string | null;
     const gender = formData.get("gender") as string;
     const bio = formData.get("bio") as string | null;
-    const profileImage = formData.get("profileImage") as File | null;
     let spouseId = formData.get("spouseId") as string | null;
     // Sanitize spouseId input
     if (spouseId === "null" || spouseId === "") {
@@ -131,35 +159,6 @@ export async function POST(
       );
     }
 
-    let profileImageUrl: string | undefined;
-
-    // Handle image upload if present
-    if (profileImage) {
-      const bytes = await profileImage.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      // Create unique filename
-      const uniqueId = uuidv4();
-      const fileExtension = profileImage.name.split(".").pop();
-      const fileName = `${uniqueId}.${fileExtension}`;
-
-      // Define upload path
-      const uploadDir = join(process.cwd(), "public", "uploads");
-
-      // Create uploads directory if it doesn't exist
-      if (!existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true });
-      }
-
-      const filePath = join(uploadDir, fileName);
-
-      // Save the file
-      await writeFile(filePath, buffer);
-
-      // Set the URL for the image
-      profileImageUrl = `/uploads/${fileName}`;
-    }
-
     const memberData = {
       ...data,
       familyTreeId: params.id,
@@ -170,10 +169,6 @@ export async function POST(
       children: data.children || [],
       spouseId: spouseId || null,
     };
-
-    if (profileImageUrl) {
-      memberData.profileImageUrl = profileImageUrl;
-    }
 
     const member = await Member.create(memberData);
 

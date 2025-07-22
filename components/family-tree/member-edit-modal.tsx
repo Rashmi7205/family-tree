@@ -125,9 +125,8 @@ export function MemberEditModal({
       if (formData.bio) {
         memberFormData.append("bio", formData.bio);
       }
-      if (selectedImage) {
-        memberFormData.append("profileImage", selectedImage);
-      } else if (formData.profileImageUrl) {
+      // Only append the image URL, not the file
+      if (formData.profileImageUrl) {
         memberFormData.append("profileImageUrl", formData.profileImageUrl);
       }
 
@@ -175,11 +174,10 @@ export function MemberEditModal({
     fileInputRef.current?.click();
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 5 * 1024 * 1024) {
-        // 5MB limit
         toast.error("Image size should be less than 5MB");
         return;
       }
@@ -187,15 +185,28 @@ export function MemberEditModal({
         toast.error("Please upload an image file");
         return;
       }
-
-      setSelectedImage(file);
-      // Create preview URL
-      const imageUrl = URL.createObjectURL(file);
-      setPreviewUrl(imageUrl);
-      setFormData((prev) => ({
-        ...prev,
-        profileImageUrl: imageUrl,
-      }));
+      // Upload to /api/upload, also send member id as user_id
+      const formData = new FormData();
+      formData.append("file", file);
+      if (member?.id) {
+        formData.append("user_id", member.id);
+      }
+      try {
+        const res = await fetch("/api/upload", {
+          method: "POST",
+          body: formData,
+        });
+        if (!res.ok) throw new Error("Upload failed");
+        const data = await res.json();
+        setPreviewUrl(data.path);
+        setFormData((prev) => ({
+          ...prev,
+          profileImageUrl: data.path,
+        }));
+        toast.success("Image uploaded successfully");
+      } catch (err) {
+        toast.error("Failed to upload image");
+      }
     }
   };
 

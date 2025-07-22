@@ -49,10 +49,8 @@ export default function EventCalendar() {
   const [eventsByDate, setEventsByDate] = useState<EventsByDate>({});
   const [loading, setLoading] = useState(true);
   const [activeDate, setActiveDate] = useState<string | null>(null);
-
-  // Get current month in YYYY-MM
-  const now = new Date();
-  const monthStr = format(now, "yyyy-MM");
+  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const monthStr = format(currentMonth, "yyyy-MM");
 
   useEffect(() => {
     if (!user) {
@@ -91,10 +89,10 @@ export default function EventCalendar() {
   // Memoize all days in the current month
   const daysInMonth = useMemo(() => {
     return eachDayOfInterval({
-      start: startOfMonth(now),
-      end: endOfMonth(now),
+      start: startOfMonth(currentMonth),
+      end: endOfMonth(currentMonth),
     });
-  }, [now]);
+  }, [currentMonth]);
 
   // Render a custom day cell
   function renderDay(day: Date) {
@@ -260,9 +258,9 @@ export default function EventCalendar() {
         ) : (
           <Calendar
             mode="single"
-            selected={now}
-            month={now}
-            onMonthChange={() => {}}
+            selected={currentMonth}
+            month={currentMonth}
+            onMonthChange={setCurrentMonth}
             showOutsideDays
             modifiers={{}}
             components={{

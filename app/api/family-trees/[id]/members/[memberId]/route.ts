@@ -3,7 +3,6 @@ import { z } from "zod";
 import connectDB from "@/lib/mongodb";
 import FamilyTree from "@/models/FamilyTree";
 import Member from "@/models/Member";
-import Relationship from "@/models/Relationship";
 import { logAudit } from "@/lib/audit";
 import {
   getTokenFromRequest,
@@ -14,6 +13,8 @@ import { writeFile, mkdir, unlink } from "fs/promises";
 import { join } from "path";
 import { v4 as uuidv4 } from "uuid";
 import { existsSync } from "fs";
+import fs from "fs";
+import path from "path";
 
 const updateMemberSchema = z.object({
   firstName: z.string().min(1),
@@ -26,6 +27,16 @@ const updateMemberSchema = z.object({
   children: z.array(z.string()).optional(),
   spouseId: z.string().nullable().optional(),
 });
+
+// Helper to get absolute base URL for server-side fetch
+function getBaseUrl() {
+  return (
+    process.env.NEXT_PUBLIC_BASE_URL ||
+    (process.env.VERCEL_URL
+      ? `https://${process.env.VERCEL_URL}`
+      : "http://localhost:3000")
+  );
+}
 
 export async function PUT(
   request: NextRequest,
@@ -44,15 +55,63 @@ export async function PUT(
     await connectDB();
     const user = await User.findOne({ uid: decodedToken.user_id });
 
-    // Handle multipart form data
+    // Use public/uploads directory to handle file upload
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+    }
+
     const formData = await request.formData();
+    const file = formData.get("profileImage");
+    let profileImageUrl = formData.get("profileImageUrl") as string | undefined;
+
+    // Check and delete old image if a new one is being uploaded
+    if (file && typeof file !== "string") {
+      // Find the existing member to get the old image URL
+      const existingMemberForImage = await Member.findById(
+        params.memberId
+      ).lean();
+      if (existingMemberForImage && existingMemberForImage.profileImageUrl) {
+        const oldImagePath = path.join(
+          process.cwd(),
+          "public",
+          existingMemberForImage.profileImageUrl
+        );
+        if (fs.existsSync(oldImagePath)) {
+          try {
+            fs.unlinkSync(oldImagePath);
+          } catch (err) {
+            console.error("Failed to delete old profile image:", err);
+          }
+        }
+      }
+      const ext = path.extname(file.name).toLowerCase();
+      const allowedExts = [".png", ".jpg", ".jpeg", ".webp", ".svg"];
+      if (!allowedExts.includes(ext)) {
+        return NextResponse.json(
+          { error: "Only png, jpg, jpeg, webp, and svg files are allowed" },
+          { status: 400 }
+        );
+      }
+      const safeName = file.name.replace(/[^a-zA-Z0-9.]/g, "");
+      const now = new Date().toISOString().replace(/[-:.TZ]/g, "");
+      const filename = `${uuidv4()}_${now}_${safeName}`;
+      const filePath = path.join(uploadDir, filename);
+
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      fs.writeFileSync(filePath, buffer);
+
+      profileImageUrl = `/uploads/${filename}`;
+    }
+
+    // Handle multipart form data
     const firstName = formData.get("firstName") as string;
     const lastName = formData.get("lastName") as string;
     const birthDate = formData.get("birthDate") as string | null;
     const deathDate = formData.get("deathDate") as string | null;
     const gender = formData.get("gender") as string;
     const bio = formData.get("bio") as string | null;
-    const profileImage = formData.get("profileImage") as File | null;
     let spouseId = formData.get("spouseId") as string | null;
     // Sanitize spouseId input
     if (spouseId === "null" || spouseId === "") {
@@ -150,35 +209,6 @@ export async function PUT(
       );
     }
 
-    let profileImageUrl: string | undefined;
-
-    // Handle image upload if present
-    if (profileImage) {
-      const bytes = await profileImage.arrayBuffer();
-      const buffer = Buffer.from(bytes);
-
-      // Create unique filename
-      const uniqueId = uuidv4();
-      const fileExtension = profileImage.name.split(".").pop();
-      const fileName = `${uniqueId}.${fileExtension}`;
-
-      // Define upload path
-      const uploadDir = join(process.cwd(), "public", "uploads");
-
-      // Create uploads directory if it doesn't exist
-      if (!existsSync(uploadDir)) {
-        await mkdir(uploadDir, { recursive: true });
-      }
-
-      const filePath = join(uploadDir, fileName);
-
-      // Save the file
-      await writeFile(filePath, buffer);
-
-      // Set the URL for the image
-      profileImageUrl = `/uploads/${fileName}`;
-    }
-
     const updateData: any = {
       ...data,
       birthDate: data.birthDate ? new Date(data.birthDate) : undefined,
@@ -188,6 +218,7 @@ export async function PUT(
       spouseId: spouseId || null,
     };
 
+    // Only update profileImageUrl if provided
     if (profileImageUrl) {
       updateData.profileImageUrl = profileImageUrl;
     }

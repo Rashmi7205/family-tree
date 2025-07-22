@@ -110,54 +110,6 @@ export default function DashboardContent({
         userProfile={userProfile}
         onEdit={() => setShowEditModal(true)}
       />
-
-      {/* Quick Actions */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.6 }}
-      >
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-            <CardDescription>
-              Manage your account and preferences
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
-                <Icons.user className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="font-medium">Update Profile</p>
-                  <p className="text-sm text-muted-foreground">
-                    Edit your personal information
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
-                <Icons.shield className="h-5 w-5 text-green-600" />
-                <div>
-                  <p className="font-medium">Security Settings</p>
-                  <p className="text-sm text-muted-foreground">
-                    Manage your account security
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-center space-x-3 p-3 rounded-lg border hover:bg-muted/50 cursor-pointer transition-colors">
-                <Icons.mail className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="font-medium">Notifications</p>
-                  <p className="text-sm text-muted-foreground">
-                    Configure your preferences
-                  </p>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </motion.div>
-
       {/* Profile Edit Modal */}
       <ProfileEditModal
         isOpen={showEditModal}
