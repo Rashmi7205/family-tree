@@ -19,6 +19,7 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import ExportPoster from "@/components/family-tree/ExportPoster";
+import { useLayoutEffect } from "react";
 
 const malePalette = {
   card: "bg-indigo-100",
@@ -270,8 +271,6 @@ function PublicTreeContent() {
     },
   }));
 
-
-
   const resetView = useCallback(() => {
     fitView({ duration: 500, padding: 0.2 });
   }, [fitView]);
@@ -281,18 +280,26 @@ function PublicTreeContent() {
     setShowPoster(true);
     setTimeout(async () => {
       if (posterRef.current) {
-        const htmlToImage = await import("html-to-image");
-        const dataUrl = await htmlToImage.toPng(posterRef.current, {
-          quality: 1.0,
-        });
-        const link = document.createElement("a");
-        link.download = `family-tree-poster-${
-          new Date().toISOString().split("T")[0]
-        }.png`;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        try {
+          const htmlToImage = await import("html-to-image");
+          const dataUrl = await htmlToImage.toPng(posterRef.current, {
+            quality: 1.0,
+          });
+          const link = document.createElement("a");
+          link.download = `family-tree-poster-${
+            new Date().toISOString().split("T")[0]
+          }.png`;
+          link.href = dataUrl;
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+        } catch (err) {
+          alert("Failed to export poster. Please try again.");
+        } finally {
+          setShowPoster(false);
+        }
+      } else {
+        alert("Poster is not ready. Please try again.");
         setShowPoster(false);
       }
     }, 100);
@@ -330,6 +337,16 @@ function PublicTreeContent() {
       </div>
     );
   }
+
+  // Re-enable pointer events on nodes after modal closes
+  useEffect(() => {
+    if (!sheetOpen) {
+      const nodes = document.querySelectorAll(".react-flow__node");
+      nodes.forEach((node) => {
+        (node as HTMLElement).style.pointerEvents = "auto";
+      });
+    }
+  }, [sheetOpen]);
 
   return (
     <div className="w-screen h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden relative">
