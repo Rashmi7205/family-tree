@@ -1,4 +1,5 @@
 import { FC, useState, useEffect } from "react";
+import { useTranslation } from "react-i18next";
 import {
   Sheet,
   SheetContent,
@@ -57,6 +58,7 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
   isEditMode,
   loading = false,
 }) => {
+  const { t, ready } = useTranslation("common");
   const [profileImageFile, setProfileImageFile] = useState<File | null>(null);
   const [profileImagePreview, setProfileImagePreview] = useState<string | null>(
     null
@@ -75,15 +77,34 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
 
   if (!memberData) return null;
 
+  // Show loading state while translations are not ready
+  if (!ready) {
+    return (
+      <Sheet open={isOpen} onOpenChange={onClose}>
+        <SheetContent
+          side="right"
+          className="max-w-lg w-full sm:max-w-xl p-0 flex flex-col h-full"
+        >
+          <div className="flex items-center justify-center h-full">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto mb-4"></div>
+              <p className="text-sm text-gray-600">Loading translations...</p>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
+    );
+  }
+
   const handleImageChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       if (file.size > 8 * 1024 * 1024) {
-        alert("Image size should be less than 8MB");
+        alert(t("addEditMember.validation.imageSize"));
         return;
       }
       if (!file.type.startsWith("image/")) {
-        alert("Please upload an image file");
+        alert(t("addEditMember.validation.imageType"));
         return;
       }
       setProfileImagePreview(URL.createObjectURL(file));
@@ -104,7 +125,7 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
             profileImageUrl: data.path,
           }));
         } catch (err) {
-          alert("Failed to upload image");
+          alert(t("addEditMember.validation.uploadFailed"));
           setProfileImagePreview(null);
           setProfileImageFile(null);
         }
@@ -160,7 +181,7 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
         // Here, we assume onSubmit(formData) will handle the actual PUT request
         await onSubmit(formData);
       } catch (err) {
-        alert("Failed to update member with image");
+        alert(t("addEditMember.validation.updateFailed"));
       }
     } else {
       // On create, or edit without new image, just call onSubmit
@@ -175,7 +196,9 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
         className="max-w-lg w-full sm:max-w-xl p-0 flex flex-col h-full"
       >
         <SheetHeader className="p-4 sm:p-6 pb-0">
-          <SheetTitle>{isEditMode ? "Edit" : "Add"} Family Member</SheetTitle>
+          <SheetTitle>
+            {isEditMode ? "Edit Family Member" : "Add Family Member"}
+          </SheetTitle>
         </SheetHeader>
         <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
           <div className="flex flex-col items-center gap-4">
@@ -187,12 +210,14 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <span className="text-gray-500 text-sm">No Image</span>
+                <span className="text-gray-500 text-sm">
+                  {t("addEditMember.form.noImage")}
+                </span>
               )}
             </div>
             <div>
               <Label htmlFor="profileImage" className="sr-only">
-                Profile Image
+                {t("addEditMember.form.profileImage")}
               </Label>
               <Input
                 id="profileImage"
@@ -205,7 +230,9 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName">
+                {t("addEditMember.form.firstName")}
+              </Label>
               <Input
                 id="firstName"
                 value={memberData.firstName}
@@ -215,13 +242,15 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                     firstName: e.target.value,
                   }))
                 }
-                placeholder="Enter first name"
+                placeholder={t("addEditMember.form.firstNamePlaceholder")}
                 disabled={loading}
                 className="w-full"
               />
             </div>
             <div>
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName">
+                {t("addEditMember.form.lastName")}
+              </Label>
               <Input
                 id="lastName"
                 value={memberData.lastName}
@@ -231,7 +260,7 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                     lastName: e.target.value,
                   }))
                 }
-                placeholder="Enter last name"
+                placeholder={t("addEditMember.form.lastNamePlaceholder")}
                 disabled={loading}
                 className="w-full"
               />
@@ -239,7 +268,7 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="gender">Gender</Label>
+              <Label htmlFor="gender">{t("addEditMember.form.gender")}</Label>
               <Select
                 value={memberData.gender}
                 onValueChange={(value) =>
@@ -251,14 +280,22 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="male">Male</SelectItem>
-                  <SelectItem value="female">Female</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
+                  <SelectItem value="male">
+                    {t("addEditMember.form.male")}
+                  </SelectItem>
+                  <SelectItem value="female">
+                    {t("addEditMember.form.female")}
+                  </SelectItem>
+                  <SelectItem value="other">
+                    {t("addEditMember.form.other")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div>
-              <Label htmlFor="birthDate">Birth Date</Label>
+              <Label htmlFor="birthDate">
+                {t("addEditMember.form.birthDate")}
+              </Label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -274,7 +311,7 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                     {memberData.birthDate ? (
                       format(new Date(memberData.birthDate), "PPP")
                     ) : (
-                      <span>Pick a date</span>
+                      <span>{t("addEditMember.form.pickDate")}</span>
                     )}
                   </Button>
                 </PopoverTrigger>
@@ -299,7 +336,7 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
             </div>
           </div>
           <div>
-            <Label htmlFor="bio">Biography</Label>
+            <Label htmlFor="bio">{t("addEditMember.form.bio")}</Label>
             <Textarea
               id="bio"
               value={memberData.bio || ""}
@@ -309,20 +346,22 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                   bio: e.target.value,
                 }))
               }
-              placeholder="A short biography of the family member."
+              placeholder={t("addEditMember.form.bioPlaceholder")}
               disabled={loading}
               className="w-full min-h-[80px]"
             />
           </div>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="parents">Parents</Label>
+              <Label htmlFor="parents">{t("addEditMember.form.parents")}</Label>
               <Select
                 onValueChange={(val) => handleSelectChange("parents", val)}
                 disabled={loading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select parent..." />
+                  <SelectValue
+                    placeholder={t("addEditMember.form.selectParent")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {allMembers
@@ -358,13 +397,17 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
             </div>
 
             <div>
-              <Label htmlFor="children">Children</Label>
+              <Label htmlFor="children">
+                {t("addEditMember.form.children")}
+              </Label>
               <Select
                 onValueChange={(val) => handleSelectChange("children", val)}
                 disabled={loading}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select child..." />
+                  <SelectValue
+                    placeholder={t("addEditMember.form.selectChild")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {allMembers
@@ -401,7 +444,9 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
 
             <div>
               <Label htmlFor="spouse">
-                {memberData.gender === "female" ? "Husband" : "Spouse"}
+                {memberData.gender === "female"
+                  ? t("addEditMember.form.husband")
+                  : t("addEditMember.form.spouse")}
               </Label>
               <Select
                 value={memberData.spouseId || "none"}
@@ -422,13 +467,15 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
                           );
                           return spouse
                             ? `${spouse.firstName} ${spouse.lastName}`
-                            : "Select spouse...";
+                            : t("addEditMember.form.selectSpouse");
                         })()
-                      : "Select spouse..."}
+                      : t("addEditMember.form.selectSpouse")}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">No spouse</SelectItem>
+                  <SelectItem value="none">
+                    {t("addEditMember.form.noSpouse")}
+                  </SelectItem>
                   {allMembers
                     .filter((m) => {
                       if (
@@ -459,9 +506,9 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
             {loading ? (
               <ButtonLoader size="sm" />
             ) : isEditMode ? (
-              "Save Changes"
+              t("addEditMember.buttons.saveChanges")
             ) : (
-              "Add Member"
+              t("addEditMember.buttons.addMember")
             )}
           </Button>
           <SheetClose asChild>
@@ -471,7 +518,7 @@ export const AddEditMemberModal: FC<AddEditMemberModalProps> = ({
               variant="outline"
               className="w-full"
             >
-              Close
+              {t("addEditMember.buttons.close")}
             </Button>
           </SheetClose>
         </div>

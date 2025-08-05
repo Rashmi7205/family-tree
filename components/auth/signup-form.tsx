@@ -15,6 +15,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { Icons } from "@/components/icons";
 import { FirebaseError } from "firebase/app";
 import { ButtonLoader } from "@/components/ui/loader";
+import { useTranslation } from "react-i18next";
 
 const signUpSchema = z
   .object({
@@ -38,6 +39,7 @@ export default function SignUpForm() {
   const { signUp, signInWithGoogle } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation("common");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -119,10 +121,10 @@ export default function SignUpForm() {
     <div className="space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="displayName">Full Name</Label>
+          <Label htmlFor="displayName">{t("signup.form.firstName")}</Label>
           <Input
             id="displayName"
-            placeholder="Enter your full name"
+            placeholder={t("signup.form.firstNamePlaceholder")}
             autoComplete="name"
             disabled={isLoading}
             {...register("displayName")}
@@ -132,11 +134,11 @@ export default function SignUpForm() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("signup.form.email")}</Label>
           <Input
             id="email"
             type="email"
-            placeholder="Enter your email address"
+            placeholder={t("signup.form.emailPlaceholder")}
             autoComplete="email"
             disabled={isLoading}
             {...register("email")}
@@ -146,12 +148,12 @@ export default function SignUpForm() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="password">Password</Label>
+          <Label htmlFor="password">{t("signup.form.password")}</Label>
           <div className="relative">
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
+              placeholder={t("signup.form.passwordPlaceholder")}
               autoComplete="new-password"
               disabled={isLoading}
               {...register("password")}
@@ -175,12 +177,14 @@ export default function SignUpForm() {
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm Password</Label>
+          <Label htmlFor="confirmPassword">
+            {t("signup.form.confirmPassword")}
+          </Label>
           <div className="relative">
             <Input
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
-              placeholder="Confirm your password"
+              placeholder={t("signup.form.confirmPasswordPlaceholder")}
               autoComplete="new-password"
               disabled={isLoading}
               {...register("confirmPassword")}
@@ -208,7 +212,11 @@ export default function SignUpForm() {
           )}
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? <ButtonLoader size="sm" /> : "Create Account"}
+          {isLoading ? (
+            <ButtonLoader size="sm" />
+          ) : (
+            t("signup.form.submitButton")
+          )}
         </Button>
       </form>
 
@@ -240,12 +248,12 @@ export default function SignUpForm() {
       </div>
 
       <div className="text-center text-sm">
-        Already have an account?{" "}
+        {t("signup.form.alreadyHaveAccount")}{" "}
         <Link
           href="/auth/signin"
           className="font-medium text-primary hover:underline"
         >
-          Sign in
+          {t("signup.form.signInLink")}
         </Link>
       </div>
     </div>

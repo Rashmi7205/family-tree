@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/lib/auth/auth-context";
+import { useTranslation } from "react-i18next";
 import type { User } from "firebase/auth";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -37,37 +38,6 @@ import { cn } from "@/lib/utils";
 import { IUser } from "../../models/User";
 import { educationOptions, occupationOptions } from "../../constants";
 
-const profileSchema = z.object({
-  title: z.string().min(1, { message: "Title is required" }),
-  fullName: z
-    .string()
-    .min(2, { message: "Full name must be at least 2 characters" }),
-  gender: z.string().min(1, { message: "Gender is required" }),
-  dateOfBirth: z.date({ required_error: "Date of birth is required" }),
-  bloodGroup: z.string().min(1, { message: "Blood group is required" }),
-  education: z.string().min(1, { message: "Education is required" }),
-  otherEducation: z.string().optional(),
-  occupation: z.string().min(1, { message: "Occupation is required" }),
-  otherOccupation: z.string().optional(),
-  maritalStatus: z.string().min(1, { message: "Marital status is required" }),
-});
-
-type ProfileFormValues = z.infer<typeof profileSchema>;
-
-interface ProfileEditModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  user: User;
-  userProfile: IUser;
-}
-
-interface AdminOption {
-  _id: string;
-  type: string;
-  value: string;
-  isActive: boolean;
-}
-
 export default function ProfileEditModal({
   isOpen,
   onClose,
@@ -76,9 +46,55 @@ export default function ProfileEditModal({
 }: ProfileEditModalProps) {
   const { refreshUserProfile } = useAuth();
   const { toast } = useToast();
+  const { t } = useTranslation("common");
   const [isLoading, setIsLoading] = useState(false);
   const [showOtherEducation, setShowOtherEducation] = useState(false);
   const [showOtherOccupation, setShowOtherOccupation] = useState(false);
+
+  const profileSchema = z.object({
+    title: z
+      .string()
+      .min(1, { message: t("userProfile.editModal.validation.titleRequired") }),
+    fullName: z.string().min(2, {
+      message: t("userProfile.editModal.validation.fullNameRequired"),
+    }),
+    gender: z.string().min(1, {
+      message: t("userProfile.editModal.validation.genderRequired"),
+    }),
+    dateOfBirth: z.date({
+      required_error: t("userProfile.editModal.validation.dateOfBirthRequired"),
+    }),
+    bloodGroup: z.string().min(1, {
+      message: t("userProfile.editModal.validation.bloodGroupRequired"),
+    }),
+    education: z.string().min(1, {
+      message: t("userProfile.editModal.validation.educationRequired"),
+    }),
+    otherEducation: z.string().optional(),
+    occupation: z.string().min(1, {
+      message: t("userProfile.editModal.validation.occupationRequired"),
+    }),
+    otherOccupation: z.string().optional(),
+    maritalStatus: z.string().min(1, {
+      message: t("userProfile.editModal.validation.maritalStatusRequired"),
+    }),
+  });
+
+  type ProfileFormValues = z.infer<typeof profileSchema>;
+
+  interface ProfileEditModalProps {
+    isOpen: boolean;
+    onClose: () => void;
+    user: User;
+    userProfile: IUser;
+  }
+
+  interface AdminOption {
+    _id: string;
+    type: string;
+    value: string;
+    isActive: boolean;
+  }
 
   const {
     register,
@@ -175,8 +191,10 @@ export default function ProfileEditModal({
       }
 
       toast({
-        title: "Profile updated",
-        description: "Your profile has been updated successfully.",
+        title: t("userProfile.editModal.messages.profileUpdated"),
+        description: t(
+          "userProfile.editModal.messages.profileUpdatedDescription"
+        ),
       });
 
       await refreshUserProfile();
@@ -184,9 +202,13 @@ export default function ProfileEditModal({
     } catch (error) {
       toast({
         variant: "destructive",
-        title: "Profile update failed",
+        title: t("userProfile.editModal.messages.profileUpdateFailed"),
         description:
-          error instanceof Error ? error.message : "Please try again later.",
+          error instanceof Error
+            ? error.message
+            : t(
+                "userProfile.editModal.messages.profileUpdateFailedDescription"
+              ),
       });
     } finally {
       setIsLoading(false);
@@ -194,43 +216,82 @@ export default function ProfileEditModal({
   };
 
   const titleOptions = [
-    { value: "mr", label: "Mr." },
-    { value: "mrs", label: "Mrs." },
-    { value: "ms", label: "Ms." },
-    { value: "other", label: "Other" },
+    { value: "mr", label: t("userProfile.editModal.options.titles.mr") },
+    { value: "mrs", label: t("userProfile.editModal.options.titles.mrs") },
+    { value: "ms", label: t("userProfile.editModal.options.titles.ms") },
+    { value: "other", label: t("userProfile.editModal.options.titles.other") },
   ];
 
   const genderOptions = [
-    { value: "male", label: "Male" },
-    { value: "female", label: "Female" },
-    { value: "other", label: "Other" },
+    { value: "male", label: t("userProfile.editModal.options.genders.male") },
+    {
+      value: "female",
+      label: t("userProfile.editModal.options.genders.female"),
+    },
+    { value: "other", label: t("userProfile.editModal.options.genders.other") },
   ];
 
   const bloodGroupOptions = [
-    { value: "a+", label: "A+" },
-    { value: "a-", label: "A-" },
-    { value: "b+", label: "B+" },
-    { value: "b-", label: "B-" },
-    { value: "ab+", label: "AB+" },
-    { value: "ab-", label: "AB-" },
-    { value: "o+", label: "O+" },
-    { value: "o-", label: "O-" },
+    {
+      value: "a+",
+      label: t("userProfile.editModal.options.bloodGroups.aPlus"),
+    },
+    {
+      value: "a-",
+      label: t("userProfile.editModal.options.bloodGroups.aMinus"),
+    },
+    {
+      value: "b+",
+      label: t("userProfile.editModal.options.bloodGroups.bPlus"),
+    },
+    {
+      value: "b-",
+      label: t("userProfile.editModal.options.bloodGroups.bMinus"),
+    },
+    {
+      value: "ab+",
+      label: t("userProfile.editModal.options.bloodGroups.abPlus"),
+    },
+    {
+      value: "ab-",
+      label: t("userProfile.editModal.options.bloodGroups.abMinus"),
+    },
+    {
+      value: "o+",
+      label: t("userProfile.editModal.options.bloodGroups.oPlus"),
+    },
+    {
+      value: "o-",
+      label: t("userProfile.editModal.options.bloodGroups.oMinus"),
+    },
   ];
 
   const maritalStatusOptions = [
-    { value: "single", label: "Single" },
-    { value: "married", label: "Married" },
-    { value: "divorced", label: "Divorced" },
-    { value: "widowed", label: "Widowed" },
+    {
+      value: "single",
+      label: t("userProfile.editModal.options.maritalStatus.single"),
+    },
+    {
+      value: "married",
+      label: t("userProfile.editModal.options.maritalStatus.married"),
+    },
+    {
+      value: "divorced",
+      label: t("userProfile.editModal.options.maritalStatus.divorced"),
+    },
+    {
+      value: "widowed",
+      label: t("userProfile.editModal.options.maritalStatus.widowed"),
+    },
   ];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Profile</DialogTitle>
+          <DialogTitle>{t("userProfile.editModal.title")}</DialogTitle>
           <DialogDescription>
-            Update your personal information and preferences.
+            {t("userProfile.editModal.description")}
           </DialogDescription>
         </DialogHeader>
 
@@ -238,13 +299,17 @@ export default function ProfileEditModal({
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Title */}
             <div className="space-y-2">
-              <Label htmlFor="title">Title</Label>
+              <Label htmlFor="title">
+                {t("userProfile.editModal.form.title")}
+              </Label>
               <Select
                 onValueChange={(value) => setValue("title", value)}
                 value={watch("title")}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select title" />
+                  <SelectValue
+                    placeholder={t("userProfile.editModal.form.selectTitle")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {titleOptions.map((option) => (
@@ -261,10 +326,12 @@ export default function ProfileEditModal({
 
             {/* Full Name */}
             <div className="space-y-2">
-              <Label htmlFor="fullName">Full Name</Label>
+              <Label htmlFor="fullName">
+                {t("userProfile.editModal.form.fullName")}
+              </Label>
               <Input
                 id="fullName"
-                placeholder="Enter your full name"
+                placeholder={t("userProfile.editModal.form.enterFullName")}
                 {...register("fullName")}
               />
               {errors.fullName && (
@@ -276,13 +343,17 @@ export default function ProfileEditModal({
 
             {/* Gender */}
             <div className="space-y-2">
-              <Label htmlFor="gender">Gender</Label>
+              <Label htmlFor="gender">
+                {t("userProfile.editModal.form.gender")}
+              </Label>
               <Select
                 onValueChange={(value) => setValue("gender", value)}
                 value={watch("gender")}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Select gender" />
+                  <SelectValue
+                    placeholder={t("userProfile.editModal.form.selectGender")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {genderOptions.map((option) => (
@@ -299,7 +370,7 @@ export default function ProfileEditModal({
 
             {/* Date of Birth */}
             <div className="space-y-2">
-              <Label htmlFor="dateOfBirth">Date of Birth</Label>
+              <Label htmlFor="dateOfBirth">{t("userProfile.editModal.form.dateOfBirth")}</Label>
               <Input
                 id="dateOfBirth"
                 type="date"

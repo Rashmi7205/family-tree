@@ -3,6 +3,7 @@
 import type { User } from "firebase/auth";
 
 import { useAuth } from "@/lib/auth/auth-context";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -16,7 +17,7 @@ import {
 import { Icons } from "@/components/icons";
 import { IUser } from "../../models/User";
 import Link from "next/link";
-import {Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 interface DashboardHeaderProps {
   user: User;
@@ -28,6 +29,7 @@ export default function DashboardHeader({
   userProfile,
 }: DashboardHeaderProps) {
   const { logout } = useAuth();
+  const { t } = useTranslation("common");
 
   const handleSignOut = async () => {
     await logout();
@@ -37,13 +39,15 @@ export default function DashboardHeader({
     <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b dark:bg-slate-950/80">
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center space-x-4">
-          <h1 className="text-xl font-bold">Dashboard</h1>
+          <h1 className="text-xl font-bold">
+            {t("userProfile.dashboard.title")}
+          </h1>
         </div>
         <div>
           <Link href="/trees">
             <Button variant="outline" size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              New Tree
+              {t("userProfile.dashboard.newTree")}
             </Button>
           </Link>
           <DropdownMenu>
@@ -74,7 +78,7 @@ export default function DashboardHeader({
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <Icons.logOut className="mr-2 h-4 w-4" />
-                <span>Sign out</span>
+                <span>{t("userProfile.dashboard.signOut")}</span>
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

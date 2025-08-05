@@ -1,45 +1,75 @@
+"use client";
+
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
 import { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
 
 export function Features() {
+  const { t, ready } = useTranslation("common");
+
+  // Show loading state while translations are being loaded
+  if (!ready) {
+    return (
+      <section id="features" className="py-16 md:py-32">
+        <div className="mx-auto max-w-5xl px-6">
+          <div className="text-center">
+            <div className="h-12 bg-muted rounded animate-pulse mb-4" />
+            <div className="h-6 bg-muted rounded w-3/4 mx-auto animate-pulse" />
+          </div>
+          <div className="mx-auto mt-8 flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-center md:items-stretch md:mt-16">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="group border-0 bg-muted shadow-none flex-1 flex flex-col items-center justify-between max-w-sm mx-auto md:mx-0 min-w-[220px] p-6"
+              >
+                <div className="w-14 h-14 bg-muted rounded-full animate-pulse mb-4" />
+                <div className="h-6 bg-muted rounded w-3/4 animate-pulse mb-2" />
+                <div className="h-4 bg-muted rounded w-full animate-pulse" />
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section id="features" className="py-16 md:py-32">
       <div className="mx-auto max-w-5xl px-6">
         <div className="text-center">
           <h2 className="text-balance text-4xl font-semibold lg:text-5xl">
-            Everything You Need to Build Your Legacy
+            {t("homepage.features.title")}
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Our platform provides powerful, intuitive tools to help you
-            discover, preserve, and share your family's history.
+            {t("homepage.features.subtitle")}
           </p>
         </div>
         <div className="mx-auto mt-8 flex flex-col gap-6 md:flex-row md:flex-wrap md:justify-center md:items-stretch md:mt-16">
           <FeatureCard
             imgSrc="/assets/family-tree.png"
-            title="Interactive Tree Building"
-            description="Easily create and visualize your family tree with our intuitive drag-and-drop interface and dynamic zoom capabilities."
+            title={t("homepage.features.cards.treeBuilding.title")}
+            description={t("homepage.features.cards.treeBuilding.description")}
           />
           <FeatureCard
             imgSrc="/assets/picture.png"
-            title="Preserve Rich Memories"
-            description="Enrich your family history by adding photos, stories, and important memories for each member, creating a vivid archive."
+            title={t("homepage.features.cards.memories.title")}
+            description={t("homepage.features.cards.memories.description")}
           />
           <FeatureCard
             imgSrc="/assets/invite.png"
-            title="Collaborate with Family"
-            description="Invite family members to view and contribute to your shared tree, making it a collaborative and living project."
+            title={t("homepage.features.cards.collaborate.title")}
+            description={t("homepage.features.cards.collaborate.description")}
           />
           <FeatureCard
             imgSrc="/assets/export-file.png"
-            title="Export Tree"
-            description="Export your family tree in multiple formats including PDF and PNG for easy sharing and printing."
+            title={t("homepage.features.cards.export.title")}
+            description={t("homepage.features.cards.export.description")}
           />
           <FeatureCard
             imgSrc="/assets/responsive.png"
-            title="Responsive Layout"
-            description="Access and edit your family tree from any device with our fully responsive and mobile-friendly design."
+            title={t("homepage.features.cards.responsive.title")}
+            description={t("homepage.features.cards.responsive.description")}
           />
         </div>
       </div>

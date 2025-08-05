@@ -11,6 +11,7 @@ import OnboardingSuccess from "@/components/onboarding/onboarding-success";
 import { useAuth } from "@/lib/auth/auth-context";
 import { motion, AnimatePresence } from "framer-motion";
 import { IUser } from "../../models/User";
+import { useTranslation } from "react-i18next";
 
 interface OnboardingFlowProps {
   user: User;
@@ -26,17 +27,65 @@ export default function OnboardingFlow({
   const router = useRouter();
   const { toast } = useToast();
   const { refreshUserProfile } = useAuth();
+  const { t, ready } = useTranslation("common");
   const [currentStep, setCurrentStep] = useState<OnboardingStep>(
     userProfile && userProfile.phoneNumberVerified ? "profile" : "phone"
   );
   const [isLoading, setIsLoading] = useState<boolean>(false);
 
+  // Show loading state while translations are being loaded
+  if (!ready) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="flex flex-col items-center space-y-4">
+          <div className="w-16 h-16 animate-spin">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 100 100"
+              width="100%"
+              height="100%"
+              fill="currentColor"
+              stroke="none"
+            >
+              <defs>
+                <rect
+                  id="spinner"
+                  x="46.5"
+                  y="45"
+                  width="6"
+                  height="14"
+                  rx="2"
+                  ry="2"
+                  transform="translate(0 -30)"
+                />
+              </defs>
+              {Array.from({ length: 9 }).map((_, i) => (
+                <use
+                  key={i}
+                  xlinkHref="#spinner"
+                  transform={`rotate(${i * 40} 50 50)`}
+                >
+                  <animate
+                    attributeName="opacity"
+                    values="0;1;0"
+                    dur="1s"
+                    begin={`${(i * (1 / 9)).toFixed(10)}s`}
+                    repeatCount="indefinite"
+                  />
+                </use>
+              ))}
+            </svg>
+          </div>
+          <p className="text-lg font-medium text-muted-foreground">
+            Loading ...
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   const handlePhoneVerified = async (verifiedPhone: string) => {
     await refreshUserProfile();
-    // After refreshing, check if phoneNumberVerified is true in the updated userProfile
-    // If not, stay on phone step, else move to profile
-    // We'll need to fetch the latest userProfile here
-    // For now, optimistically move to profile step
     setCurrentStep("profile");
   };
 
@@ -63,10 +112,10 @@ export default function OnboardingFlow({
           className="text-center mb-2 w-full"
         >
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 dark:text-white mb-1 tracking-tight">
-            Complete Your Profile
+            {t("onboarding.title")}
           </h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm md:text-base">
-            Just a few more steps to get you started
+            {t("onboarding.subtitle")}
           </p>
           <div className="w-16 h-1 mx-auto mt-3 mb-1 rounded-full bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 opacity-60" />
         </motion.div>

@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { ThemeToggle } from "./ThemeToggle";
 import ExploreButton from "@/components/ui/ExploreButton";
 import SearchModal from "./SearchModal";
+import { LanguageSwitcher } from "@/components/ui/language-switcher";
 
 interface NavItem {
   name: string;
@@ -20,9 +21,15 @@ interface NavBarProps {
   items: NavItem[];
   className?: string;
   showThemeToggle?: boolean;
+  showLanguageSwitcher?: boolean;
 }
 
-export function NavBar({ items, className, showThemeToggle }: NavBarProps) {
+export function NavBar({
+  items,
+  className,
+  showThemeToggle,
+  showLanguageSwitcher,
+}: NavBarProps) {
   const [activeTab, setActiveTab] = useState(items[0].name);
   const [searchOpen, setSearchOpen] = useState(false);
 
@@ -81,6 +88,7 @@ export function NavBar({ items, className, showThemeToggle }: NavBarProps) {
           })}
 
           {showThemeToggle && <ThemeToggle />}
+          {showLanguageSwitcher && <LanguageSwitcher />}
           <button
             type="button"
             aria-label="Search"

@@ -63,3 +63,5 @@ logs
 # Temporary files
 /tmp/
 .tmp/
+
+FEATURES.txt

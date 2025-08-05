@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { usePublicFamilyTree } from "@/components/family-tree-viewer/hooks";
 import { Header } from "@/components/family-tree-viewer/Header";
@@ -19,7 +20,6 @@ import {
   SheetClose,
 } from "@/components/ui/sheet";
 import ExportPoster from "@/components/family-tree/ExportPoster";
-import { useLayoutEffect } from "react";
 
 const malePalette = {
   card: "bg-indigo-100",
@@ -73,8 +73,10 @@ function MemberDetailSheetViewOnly({
   member: any;
   onClose: () => void;
 }) {
+  const { t } = useTranslation("common");
+  const palette = getPaletteByGender(member?.gender);
+
   if (!member) return null;
-  const palette = getPaletteByGender(member.gender);
   return (
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent
@@ -121,13 +123,17 @@ function MemberDetailSheetViewOnly({
             </div>
             <div className="w-full">
               <div className="mb-4">
-                <span className="font-semibold">Bio:</span>
+                <span className="font-semibold">
+                  {t("familyTreeViewer.memberDetail.bio")}
+                </span>
                 <p className="text-sm text-gray-600 mt-1">
-                  {member.bio || "No biography available."}
+                  {member.bio || t("familyTreeViewer.memberDetail.noBio")}
                 </p>
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Parents:</span>
+                <span className="font-semibold">
+                  {t("familyTreeViewer.memberDetail.parents")}
+                </span>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {member.parents && member.parents.length > 0 ? (
                     member.parents.map((pid: string) => {
@@ -144,12 +150,16 @@ function MemberDetailSheetViewOnly({
                       ) : null;
                     })
                   ) : (
-                    <span className="text-gray-400 text-xs ml-2">None</span>
+                    <span className="text-gray-400 text-xs ml-2">
+                      {t("familyTreeViewer.memberDetail.none")}
+                    </span>
                   )}
                 </div>
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Children:</span>
+                <span className="font-semibold">
+                  {t("familyTreeViewer.memberDetail.children")}
+                </span>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {member.children && member.children.length > 0 ? (
                     member.children.map((cid: string) => {
@@ -166,12 +176,16 @@ function MemberDetailSheetViewOnly({
                       ) : null;
                     })
                   ) : (
-                    <span className="text-gray-400 text-xs ml-2">None</span>
+                    <span className="text-gray-400 text-xs ml-2">
+                      {t("familyTreeViewer.memberDetail.none")}
+                    </span>
                   )}
                 </div>
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Spouse:</span>
+                <span className="font-semibold">
+                  {t("familyTreeViewer.memberDetail.spouse")}
+                </span>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {member.spouseId ? (
                     (() => {
@@ -183,18 +197,24 @@ function MemberDetailSheetViewOnly({
                           {spouse.firstName} {spouse.lastName}
                         </span>
                       ) : (
-                        <span className="text-gray-400 text-xs ml-2">None</span>
+                        <span className="text-gray-400 text-xs ml-2">
+                          {t("familyTreeViewer.memberDetail.none")}
+                        </span>
                       );
                     })()
                   ) : (
-                    <span className="text-gray-400 text-xs ml-2">None</span>
+                    <span className="text-gray-400 text-xs ml-2">
+                      {t("familyTreeViewer.memberDetail.none")}
+                    </span>
                   )}
                 </div>
               </div>
             </div>
           </div>
           <SheetClose asChild>
-            <Button className="mt-6 w-full">Close</Button>
+            <Button className="mt-6 w-full">
+              {t("familyTreeViewer.memberDetail.close")}
+            </Button>
           </SheetClose>
         </div>
       </SheetContent>
@@ -206,6 +226,7 @@ function PublicTreeContent() {
   const params = useParams();
   const treeId = params?.id as string;
   const [treeData, setTreeData] = useState<any>(null);
+  const { t } = useTranslation("common");
   const {
     members,
     nodes,
@@ -294,20 +315,30 @@ function PublicTreeContent() {
           link.click();
           document.body.removeChild(link);
         } catch (err) {
-          alert("Failed to export poster. Please try again.");
+          alert(t("familyTreeViewer.export.failed"));
         } finally {
           setShowPoster(false);
         }
       } else {
-        alert("Poster is not ready. Please try again.");
+        alert(t("familyTreeViewer.export.failed"));
         setShowPoster(false);
       }
     }, 100);
   };
 
+  // Re-enable pointer events on nodes after modal closes
+  useEffect(() => {
+    if (!sheetOpen) {
+      const nodes = document.querySelectorAll(".react-flow__node");
+      nodes.forEach((node) => {
+        (node as HTMLElement).style.pointerEvents = "auto";
+      });
+    }
+  }, [sheetOpen]);
+
   // Show page loader while initial loading
   if (loading && members.length === 0) {
-    return <PageLoader text="Loading family tree..." />;
+    return <PageLoader text={t("familyTreeViewer.loading")} />;
   }
 
   // Show error state
@@ -329,24 +360,16 @@ function PublicTreeContent() {
             </svg>
           </div>
           <h2 className="text-xl font-semibold mb-2">
-            Error Loading Family Tree
+            {t("familyTreeViewer.error.title")}
           </h2>
           <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
+          <Button onClick={() => window.location.reload()}>
+            {t("familyTreeViewer.error.tryAgain")}
+          </Button>
         </div>
       </div>
     );
   }
-
-  // Re-enable pointer events on nodes after modal closes
-  useEffect(() => {
-    if (!sheetOpen) {
-      const nodes = document.querySelectorAll(".react-flow__node");
-      nodes.forEach((node) => {
-        (node as HTMLElement).style.pointerEvents = "auto";
-      });
-    }
-  }, [sheetOpen]);
 
   return (
     <div className="w-screen h-screen bg-gray-50 dark:bg-gray-900 overflow-hidden relative">
@@ -362,7 +385,7 @@ function PublicTreeContent() {
               variant="outline"
               size="icon"
               className="h-10 w-10 min-w-[44px] min-h-[44px] hidden md:flex"
-              title="Export as Poster"
+              title={t("familyTreeViewer.export.title")}
             >
               <Download className="h-5 w-5" />
             </Button>
@@ -375,7 +398,7 @@ function PublicTreeContent() {
               className="md:hidden"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export as Poster
+              {t("familyTreeViewer.export.title")}
             </Button>
           </>
         }
@@ -404,7 +427,10 @@ function PublicTreeContent() {
 
       {/* Loading overlay for operations */}
       {loading && members.length > 0 && (
-        <Loader variant="overlay" text="Processing..." />
+        <Loader
+          variant="overlay"
+          text={t("familyTreeViewer.export.processing")}
+        />
       )}
 
       <MemberDetailSheetViewOnly

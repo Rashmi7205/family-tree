@@ -2,6 +2,7 @@
 
 import { useRef, useState, useCallback, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 import { useFamilyTree } from "@/components/family-tree-viewer/hooks";
 import { Header } from "@/components/family-tree-viewer/Header";
@@ -101,6 +102,7 @@ function MemberDetailSheet({
   onDelete: (memberId: string) => void;
 }) {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const { t } = useTranslation("common");
   if (!member) return null;
   const palette = getPaletteByGender(member.gender);
   return (
@@ -149,13 +151,17 @@ function MemberDetailSheet({
             </div>
             <div className="w-full">
               <div className="mb-4">
-                <span className="font-semibold">Bio:</span>
+                <span className="font-semibold">
+                  {t("familyTreeViewer.memberDetail.bio")}
+                </span>
                 <p className="text-sm text-gray-600 mt-1">
-                  {member.bio || "No biography available."}
+                  {member.bio || t("familyTreeViewer.memberDetail.noBio")}
                 </p>
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Parents:</span>
+                <span className="font-semibold">
+                  {t("familyTreeViewer.memberDetail.parents")}
+                </span>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {member.parents && member.parents.length > 0 ? (
                     member.parents.map((pid: string) => {
@@ -172,12 +178,16 @@ function MemberDetailSheet({
                       ) : null;
                     })
                   ) : (
-                    <span className="text-gray-400 text-xs ml-2">None</span>
+                    <span className="text-gray-400 text-xs ml-2">
+                      {t("familyTreeViewer.memberDetail.none")}
+                    </span>
                   )}
                 </div>
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Children:</span>
+                <span className="font-semibold">
+                  {t("familyTreeViewer.memberDetail.children")}
+                </span>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {member.children && member.children.length > 0 ? (
                     member.children.map((cid: string) => {
@@ -194,12 +204,16 @@ function MemberDetailSheet({
                       ) : null;
                     })
                   ) : (
-                    <span className="text-gray-400 text-xs ml-2">None</span>
+                    <span className="text-gray-400 text-xs ml-2">
+                      {t("familyTreeViewer.memberDetail.none")}
+                    </span>
                   )}
                 </div>
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Spouse:</span>
+                <span className="font-semibold">
+                  {t("familyTreeViewer.memberDetail.spouse")}
+                </span>
                 <div className="flex flex-wrap gap-2 mt-1">
                   {member.spouseId ? (
                     (() => {
@@ -211,11 +225,15 @@ function MemberDetailSheet({
                           {spouse.firstName} {spouse.lastName}
                         </span>
                       ) : (
-                        <span className="text-gray-400 text-xs ml-2">None</span>
+                        <span className="text-gray-400 text-xs ml-2">
+                          {t("familyTreeViewer.memberDetail.none")}
+                        </span>
                       );
                     })()
                   ) : (
-                    <span className="text-gray-400 text-xs ml-2">None</span>
+                    <span className="text-gray-400 text-xs ml-2">
+                      {t("familyTreeViewer.memberDetail.none")}
+                    </span>
                   )}
                 </div>
               </div>
@@ -227,32 +245,39 @@ function MemberDetailSheet({
               className="w-full"
               onClick={() => onEdit(member)}
             >
-              Edit Member
+              {t("familyTreeViewer.memberDetail.editMember")}
             </Button>
             <Button
               variant="destructive"
               className="w-full"
               onClick={() => setShowDeleteDialog(true)}
             >
-              Delete Member
+              {t("familyTreeViewer.memberDetail.deleteMember")}
             </Button>
           </div>
           <SheetClose asChild>
-            <Button className="mt-6 w-full">Close</Button>
+            <Button className="mt-6 w-full">
+              {t("familyTreeViewer.memberDetail.close")}
+            </Button>
           </SheetClose>
         </div>
         <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete Family Member</AlertDialogTitle>
+              <AlertDialogTitle>
+                {t("familyTreeViewer.memberDetail.deleteDialog.title")}
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                Are you sure you want to delete {member.firstName}{" "}
-                {member.lastName}? This action cannot be undone and will also
-                remove all relationships associated with this member.
+                {t("familyTreeViewer.memberDetail.deleteDialog.description", {
+                  firstName: member.firstName,
+                  lastName: member.lastName,
+                })}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>
+                {t("familyTreeViewer.memberDetail.deleteDialog.cancel")}
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={() => {
                   onDelete(member.id);
@@ -261,7 +286,7 @@ function MemberDetailSheet({
                 }}
                 className="bg-red-600 hover:bg-red-700"
               >
-                Delete Member
+                {t("familyTreeViewer.memberDetail.deleteDialog.confirm")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -275,6 +300,7 @@ function DemotreeContent() {
   const params = useParams();
   const treeId = params?.id as string;
   const [treeData, setTreeData] = useState<any>(null);
+  const { t } = useTranslation("common");
   const {
     members,
     nodes,
@@ -421,7 +447,7 @@ function DemotreeContent() {
           link.click();
           document.body.removeChild(link);
         } catch (err) {
-          alert("Failed to export poster");
+          alert(t("familyTreeViewer.export.failed"));
           console.error(err);
         } finally {
           setShowPoster(false);
@@ -434,7 +460,7 @@ function DemotreeContent() {
 
   // Show page loader while initial loading
   if (loading && members.length === 0) {
-    return <PageLoader text="Loading family tree..." />;
+    return <PageLoader text={t("familyTreeViewer.loading")} />;
   }
 
   // Show error state
@@ -456,10 +482,12 @@ function DemotreeContent() {
             </svg>
           </div>
           <h2 className="text-xl font-semibold mb-2">
-            Error Loading Family Tree
+            {t("familyTreeViewer.error.title")}
           </h2>
           <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={() => window.location.reload()}>Try Again</Button>
+          <Button onClick={() => window.location.reload()}>
+            {t("familyTreeViewer.error.tryAgain")}
+          </Button>
         </div>
       </div>
     );
@@ -487,7 +515,7 @@ function DemotreeContent() {
               variant="outline"
               size="icon"
               className="h-10 w-10 min-w-[44px] min-h-[44px] hidden md:flex"
-              title="Share"
+              title={t("familyTreeViewer.actions.share")}
             >
               <Share2 className="h-5 w-5" />
             </Button>
@@ -500,7 +528,7 @@ function DemotreeContent() {
               className="md:hidden"
             >
               <Share2 className="w-4 h-4 mr-2" />
-              Share
+              {t("familyTreeViewer.actions.share")}
             </Button>
 
             {/* Export Button - Icon only on desktop */}
@@ -509,7 +537,7 @@ function DemotreeContent() {
               variant="outline"
               size="icon"
               className="h-10 w-10 min-w-[44px] min-h-[44px] hidden md:flex"
-              title="Export as Poster"
+              title={t("familyTreeViewer.export.title")}
               disabled={exporting}
             >
               <Download className="h-5 w-5" />
@@ -524,7 +552,7 @@ function DemotreeContent() {
               disabled={exporting}
             >
               <Download className="w-4 h-4 mr-2" />
-              Export as Poster
+              {t("familyTreeViewer.export.title")}
             </Button>
           </>
         }
@@ -557,7 +585,10 @@ function DemotreeContent() {
 
       {/* Loading overlay for operations */}
       {loading && members.length > 0 && (
-        <Loader variant="overlay" text="Processing..." />
+        <Loader
+          variant="overlay"
+          text={t("familyTreeViewer.export.processing")}
+        />
       )}
 
       <MemberDetailSheet
@@ -623,7 +654,8 @@ function DemotreeContent() {
         <DialogContent className="max-w-sm w-full p-0 overflow-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Share2 className="w-5 h-5 text-green-600" /> Share this Tree
+              <Share2 className="w-5 h-5 text-green-600" />{" "}
+              {t("familyTreeViewer.share.title")}
             </DialogTitle>
           </DialogHeader>
           <ShareDialogContent url={shareUrl} />
@@ -636,6 +668,7 @@ function DemotreeContent() {
 // Share Dialog Content Component
 const ShareDialogContent = ({ url }: { url: string }) => {
   const [copied, setCopied] = useState(false);
+  const { t } = useTranslation("common");
   const shareText = encodeURIComponent("Check out this family tree!");
 
   const QRSVG = ({ value, size = 160 }: { value: string; size?: number }) => {
@@ -691,12 +724,16 @@ const ShareDialogContent = ({ url }: { url: string }) => {
           className="w-full sm:w-auto flex items-center justify-center gap-1"
         >
           <Copy className="w-4 h-4 text-green-600" />
-          {copied ? "Copied!" : "Copy Link"}
+          {copied
+            ? t("familyTreeViewer.share.copied")
+            : t("familyTreeViewer.share.copyLink")}
         </Button>
       </div>
       <div className="border-t border-gray-100 dark:border-gray-800 my-2 w-full" />
       <div className="px-4 flex flex-col items-center gap-1 w-full">
-        <span className="text-xs text-gray-500">Share via</span>
+        <span className="text-xs text-gray-500">
+          {t("familyTreeViewer.share.shareVia")}
+        </span>
         <div className="flex justify-center gap-3">
           {[
             {
@@ -741,7 +778,7 @@ const ShareDialogContent = ({ url }: { url: string }) => {
         </div>
       </div>
       <div className="text-center text-[10px] text-gray-500 dark:text-gray-400 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 w-full">
-        Anyone with this link can view this tree.
+        {t("familyTreeViewer.share.anyoneWithLink")}
       </div>
     </div>
   );

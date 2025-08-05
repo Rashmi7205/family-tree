@@ -1,14 +1,19 @@
-import type { Metadata } from "next";
+"use client";
+
 import SignInForm from "@/components/auth/signin-form";
 import Image from "next/image";
 import Link from "next/link";
-
-export const metadata: Metadata = {
-  title: "Sign In",
-  description: "Sign in to your account",
-};
+import { useTranslation } from "react-i18next";
+import { PageLoader } from "@/components/ui/loader";
 
 export default function SignInPage() {
+  const { t, ready } = useTranslation("common");
+
+  // Show loading state while translations are being loaded
+  if (!ready) {
+    return <PageLoader text="Loading ..." />;
+  }
+
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 bg-gradient-to-b from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
       <div className="w-full max-w-md space-y-6 bg-white dark:bg-slate-950 p-8 rounded-lg shadow-lg">
@@ -23,9 +28,9 @@ export default function SignInPage() {
             />
           </Link>
           <div className="flex flex-col items-start justify-center">
-            <h1 className="text-3xl font-bold">Sign In</h1>
+            <h1 className="text-3xl font-bold">{t("signin.title")}</h1>
             <p className="text-slate-600 dark:text-slate-400 text-left">
-              Enter your credentials to access your account
+              {t("signin.subtitle")}
             </p>
           </div>
         </div>

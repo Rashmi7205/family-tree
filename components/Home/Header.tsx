@@ -11,7 +11,7 @@ export function HomeNavBar() {
 
   return (
     <div className="relative">
-      <NavBar items={navItems} showThemeToggle />
+      <NavBar items={navItems} showThemeToggle showLanguageSwitcher />
     </div>
   );
 }

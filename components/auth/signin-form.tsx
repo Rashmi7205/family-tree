@@ -16,6 +16,7 @@ import { Icons } from "@/components/icons";
 import { ButtonLoader } from "@/components/ui/loader";
 import { FirebaseError } from "firebase/app";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslation } from "react-i18next";
 
 const signInSchema = z.object({
   email: z.string().email({ message: "Please enter a valid email address" }),
@@ -30,6 +31,7 @@ export default function SignInForm() {
   const { signIn, signInWithGoogle, userProfile, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
+  const { t } = useTranslation("common");
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -142,11 +144,11 @@ export default function SignInForm() {
     <div className="space-y-6">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <div className="space-y-2">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("signin.form.email")}</Label>
           <Input
             id="email"
             type="email"
-            placeholder="Enter your email address"
+            placeholder={t("signin.form.emailPlaceholder")}
             autoComplete="email"
             disabled={isLoading}
             {...register("email")}
@@ -157,19 +159,19 @@ export default function SignInForm() {
         </div>
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="password">Password</Label>
+            <Label htmlFor="password">{t("signin.form.password")}</Label>
             <Link
               href="/auth/forgot-password"
               className="text-sm text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-50"
             >
-              Forgot password?
+              {t("signin.form.forgotPassword")}
             </Link>
           </div>
           <div className="relative">
             <Input
               id="password"
               type={showPassword ? "text" : "password"}
-              placeholder="Enter your password"
+              placeholder={t("signin.form.passwordPlaceholder")}
               autoComplete="current-password"
               disabled={isLoading}
               {...register("password")}
@@ -193,7 +195,7 @@ export default function SignInForm() {
           )}
         </div>
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? <ButtonLoader size="sm" /> : "Sign In"}
+          {isLoading ? <ButtonLoader size="sm" /> : t("signin.form.submitButton")}
         </Button>
       </form>
 
@@ -225,12 +227,12 @@ export default function SignInForm() {
       </div>
 
       <div className="text-center text-sm">
-        Don&apos;t have an account?{" "}
+        {t("signin.form.dontHaveAccount")}{" "}
         <Link
           href="/auth/signup"
           className="font-medium text-primary hover:underline"
         >
-          Sign up
+          {t("signin.form.signUpLink")}
         </Link>
       </div>
     </div>

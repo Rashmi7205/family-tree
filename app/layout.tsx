@@ -5,6 +5,7 @@ import "./globals.css";
 import { AuthProvider } from "../lib/auth/auth-context";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LanguageProvider } from "@/components/providers/language-provider";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -14,6 +15,9 @@ const poppins = Poppins({
 export const metadata: Metadata = {
   title: "DugraDham Family Tree Viewer",
   description: "Build, visualize, and share your family history",
+  icons: {
+    icon: "/assets/logo.jpg",
+  },
 };
 
 export default function RootLayout({
@@ -23,15 +27,17 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
-      <body className={poppins.className}>
+      <body className={`${poppins.className}`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          <AuthProvider>{children}</AuthProvider>
-          <Toaster />
+          <LanguageProvider>
+            <AuthProvider>{children}</AuthProvider>
+            <Toaster />
+          </LanguageProvider>
         </ThemeProvider>
       </body>
     </html>

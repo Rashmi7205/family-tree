@@ -4,13 +4,13 @@ import { useState } from "react";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import toast from "react-hot-toast";
 import { Icons } from "@/components/icons";
 import { useAuth } from "@/lib/auth/auth-context";
 import { PhoneInput } from "@/components/ui/phone-input";
 import { ManualOTPInput } from "@/components/ui/manual-otp-input";
 import { motion, AnimatePresence } from "framer-motion";
 import { useToast } from "@/components/ui/use-toast";
+import { useTranslation } from "react-i18next";
 
 const phoneSchema = z.object({
   phoneNumber: z.string().regex(/^\+[1-9]\d{1,14}$/, {
@@ -30,6 +30,7 @@ export default function PhoneVerificationStep({
   onVerified,
 }: PhoneVerificationStepProps) {
   const { user } = useAuth();
+  const { t, ready } = useTranslation("common");
   const [step, setStep] = useState<"phone" | "otp">("phone");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -39,6 +40,14 @@ export default function PhoneVerificationStep({
   const [phoneNumber, setPhoneNumber] = useState("");
   const [otp, setOtp] = useState("");
   const { toast } = useToast();
+
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="w-8 h-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   // Phone input handler
   function handlePhoneChange(val: string) {
@@ -59,12 +68,13 @@ export default function PhoneVerificationStep({
     }
     if (!user) return;
     setIsLoading(true);
-    const loadingToast = toast({
-      title: "Sending OTP...",
-      description:
-        "Please wait while we send a verification code to your phone.",
-      variant: "default",
+
+    console.log("Sending toast:", t("onboarding.phone.form.loading"));
+    toast({
+      title: t("onboarding.phone.form.loading"),
+      description: t("onboarding.phone.subtitle"),
     });
+
     try {
       const token = await user.getIdToken();
       const response = await fetch("/api/onboarding/send-otp", {
@@ -88,9 +98,9 @@ export default function PhoneVerificationStep({
       setStep("otp");
       startCooldown();
       toast({
-        title: "OTP Sent",
+        title: "OTP Sent Successfully",
         description: "A verification code has been sent to your phone.",
-        variant: "success",
+        variant: "default",
       });
     } catch (error) {
       toast({
@@ -103,7 +113,6 @@ export default function PhoneVerificationStep({
       });
     } finally {
       setIsLoading(false);
-      toast.dismiss(loadingToast);
     }
   }
 
@@ -119,11 +128,12 @@ export default function PhoneVerificationStep({
     }
     if (!user) return;
     setIsLoading(true);
-    const loadingToast = toast({
-      title: "Verifying OTP...",
+
+    toast({
+      title: t("onboarding.phone.form.verifyLoading"),
       description: "Please wait while we verify your code.",
-      variant: "default",
     });
+
     try {
       const token = await user.getIdToken();
       const response = await fetch("/api/onboarding/verify-otp", {
@@ -144,9 +154,9 @@ export default function PhoneVerificationStep({
         return;
       }
       toast({
-        title: "Phone Verified",
+        title: "Phone Verified Successfully",
         description: "Your phone number has been verified successfully.",
-        variant: "success",
+        variant: "default",
       });
       setTimeout(() => onVerified(phoneNumber), 1000);
     } catch (error) {
@@ -160,7 +170,6 @@ export default function PhoneVerificationStep({
       });
     } finally {
       setIsLoading(false);
-      toast.dismiss(loadingToast);
     }
   }
 
@@ -169,11 +178,12 @@ export default function PhoneVerificationStep({
     setIsResending(true);
     setServerError(null);
     setSuccessMsg(null);
-    const loadingToast = toast({
-      title: "Resending OTP...",
+
+    toast({
+      title: t("onboarding.phone.form.resendLoading"),
       description: "Please wait while we resend the verification code.",
-      variant: "default",
     });
+
     try {
       if (!user) return;
       const token = await user.getIdToken();
@@ -197,9 +207,9 @@ export default function PhoneVerificationStep({
       setOtp("");
       startCooldown();
       toast({
-        title: "OTP Resent",
+        title: "OTP Resent Successfully",
         description: "A new verification code has been sent to your phone.",
-        variant: "success",
+        variant: "default",
       });
     } catch (error) {
       toast({
@@ -212,7 +222,6 @@ export default function PhoneVerificationStep({
       });
     } finally {
       setIsResending(false);
-      toast.dismiss(loadingToast);
     }
   }
 
@@ -253,19 +262,18 @@ export default function PhoneVerificationStep({
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="phoneNumber" className="text-base">
-                Phone Number
+                {t("onboarding.phone.form.phone")}
               </Label>
               <PhoneInput
                 id="phoneNumber"
-                placeholder="+1234567890"
+                placeholder={t("onboarding.phone.form.phonePlaceholder")}
                 disabled={isLoading}
                 value={phoneNumber}
                 onChange={handlePhoneChange}
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Enter your phone number in international format (e.g.,
-                +1234567890)
+                {t("onboarding.phone.form.phonePlaceholder")}
               </p>
             </div>
             {serverError && (
@@ -287,7 +295,9 @@ export default function PhoneVerificationStep({
               {isLoading && (
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Send Verification Code
+              {isLoading
+                ? t("onboarding.phone.form.loading")
+                : t("onboarding.phone.form.submitButton")}
             </Button>
           </motion.form>
         )}
@@ -304,7 +314,7 @@ export default function PhoneVerificationStep({
           >
             <div className="flex flex-col gap-2">
               <Label htmlFor="otp" className="text-base">
-                Verification Code
+                {t("onboarding.phone.form.verificationCode")}
               </Label>
               <ManualOTPInput
                 value={otp}
@@ -314,8 +324,7 @@ export default function PhoneVerificationStep({
                 className="justify-center"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Enter the 6-digit code sent to{" "}
-                <span className="font-medium">{phoneNumber}</span>
+                {t("onboarding.phone.form.codePlaceholder")}
               </p>
             </div>
             {serverError && (
@@ -337,7 +346,9 @@ export default function PhoneVerificationStep({
               {isLoading && (
                 <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
               )}
-              Verify
+              {isLoading
+                ? t("onboarding.phone.form.verifyLoading")
+                : t("onboarding.phone.form.verifyButton")}
             </Button>
             <div className="flex flex-col items-center gap-2 mt-2">
               <Button
@@ -351,7 +362,9 @@ export default function PhoneVerificationStep({
                 {isResending && (
                   <Icons.spinner className="mr-2 h-3 w-3 animate-spin" />
                 )}
-                {cooldown > 0 ? `Resend code in ${cooldown}s` : "Resend code"}
+                {cooldown > 0
+                  ? `${t("onboarding.phone.form.resendButton")} in ${cooldown}s`
+                  : t("onboarding.phone.form.resendButton")}
               </Button>
               <Button
                 type="button"

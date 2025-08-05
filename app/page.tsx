@@ -7,19 +7,28 @@ import About from "@/components/Home/About";
 import CTA from "@/components/Home/CTA";
 import Footer from "@/components/Home/Footer";
 import { HomeNavBar } from "@/components/Home/Header";
+import { useTranslation } from "react-i18next";
+import { PageLoader } from "@/components/ui/loader";
 
 const Index = () => {
+  const { t, ready } = useTranslation("common");
+
+  // Show loading state while translations are being loaded
+  if (!ready) {
+    return <PageLoader text="Loading translations..." />;
+  }
+
   return (
     <div className="min-h-screen">
       <HomeNavBar />
       <HeroSectionInner
-        title="Explore Your Ancestry"
+        title={t("homepage.hero.title")}
         subtitle={{
-          regular: "Begin your journey through the ",
-          gradient: "Durgadham family tree.",
+          regular: t("homepage.hero.subtitle.regular"),
+          gradient: t("homepage.hero.subtitle.gradient"),
         }}
-        description="Discover connections, trace roots, and learn more about your heritage. With our intuitive family tree viewer, you can explore, save, and share heritage data quickly and easily. Revisit stories and memories across generations, bringing the family closer than ever before."
-        ctaText="Create my Family tree"
+        description={t("homepage.hero.description")}
+        ctaText={t("homepage.hero.ctaText")}
         ctaHref="/trees"
       />
       <div className="bg-gray-50 dark:bg-black">

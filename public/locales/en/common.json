@@ -1,0 +1,242 @@
+{
+  "homepage": {
+    "hero": {
+      "title": "Explore Your Ancestry",
+      "subtitle": {
+        "regular": "Begin your journey through the ",
+        "gradient": "Durgadham family tree."
+      },
+      "description": "Discover connections, trace roots, and learn more about your heritage. With our intuitive family tree viewer, you can explore, save, and share heritage data quickly and easily. Revisit stories and memories across generations, bringing the family closer than ever before.",
+      "ctaText": "Create my Family tree"
+    },
+    "features": {
+      "title": "Everything You Need to Build Your Legacy",
+      "subtitle": "Our platform provides powerful, intuitive tools to help you discover, preserve, and share your family's history.",
+      "cards": {
+        "treeBuilding": {
+          "title": "Interactive Tree Building",
+          "description": "Easily create and visualize your family tree with our intuitive drag-and-drop interface and dynamic zoom capabilities."
+        },
+        "memories": {
+          "title": "Preserve Rich Memories",
+          "description": "Enrich your family history by adding photos, stories, and important memories for each member, creating a vivid archive."
+        },
+        "collaborate": {
+          "title": "Collaborate with Family",
+          "description": "Invite family members to view and contribute to your shared tree, making it a collaborative and living project."
+        },
+        "export": {
+          "title": "Export Tree",
+          "description": "Export your family tree in multiple formats including PDF and PNG for easy sharing and printing."
+        },
+        "responsive": {
+          "title": "Responsive Layout",
+          "description": "Access and edit your family tree from any device with our fully responsive and mobile-friendly design."
+        }
+      }
+    },
+    "about": {
+      "title": "Discover the Story of Your Family",
+      "description": {
+        "paragraph1": "At Durgadham Family Tree Explorer, we believe every family has a story worth preserving. Our goal is to make it simple, beautiful, and meaningful for families to trace their heritage across generations.",
+        "paragraph2": "From uncovering long-lost connections to preserving cherished memories, we help you piece together the threads that weave your family's unique heritage — making it easy for future generations to understand where they came from.",
+        "paragraph3": "Whether you're starting your family tree for the first time or you're an experienced genealogist, our platform is built for you. We combine heritage, technology, and design so you can explore, save, and share your family's legacy."
+      },
+      "stats": {
+        "families": {
+          "number": "50K+",
+          "label": "Families Connected"
+        },
+        "stories": {
+          "number": "1M+",
+          "label": "Stories Preserved"
+        },
+        "satisfaction": {
+          "number": "99%",
+          "label": "User Satisfaction"
+        }
+      }
+    },
+    "cta": {
+      "title": "Start Building Your Family Tree Today",
+      "button": "Get Started"
+    },
+    "footer": {
+      "contact": {
+        "title": "Get in Touch",
+        "description": "Have questions about your family tree? Need help with genealogy research? We're here to help you discover and preserve your family's legacy.",
+        "form": {
+          "title": "Send us a Message",
+          "firstName": "First Name",
+          "lastName": "Last Name",
+          "email": "Email",
+          "subject": "Subject",
+          "message": "Message",
+          "firstNamePlaceholder": "Enter your first name",
+          "lastNamePlaceholder": "Enter your last name",
+          "emailPlaceholder": "Enter your email address",
+          "subjectPlaceholder": "Subject of your message",
+          "messagePlaceholder": "Type your message here...",
+          "sendButton": "Send Message",
+          "sending": "Sending...",
+          "validation": {
+            "firstNameRequired": "First name is required",
+            "lastNameRequired": "Last name is required",
+            "emailRequired": "Email is required",
+            "subjectRequired": "Subject is required",
+            "messageRequired": "Message is required",
+            "invalidEmail": "Please enter a valid email address"
+          },
+          "success": "Message Sent Successfully!",
+          "error": "Failed to send message. Please try again.",
+          "networkError": "Network error. Please check your connection and try again."
+        },
+        "info": {
+          "email": "Email",
+          "phone": "Phone",
+          "address": "Address"
+        }
+      },
+      "links": {
+        "features": "Features",
+        "about": "About",
+        "login": "Login",
+        "register": "Register",
+        "privacy": "Privacy Policy",
+        "terms": "Terms of Service",
+        "contact": "Contact"
+      },
+      "copyright": "Durga Dham Family Tree Explorer. All rights reserved."
+    }
+  },
+  "languageSwitcher": {
+    "title": "Language",
+    "english": "English",
+    "hindi": "हिंदी",
+    "gujarati": "ગુજરાતી"
+  },
+  "userProfile": {
+    "dashboard": {
+      "title": "Dashboard",
+      "newTree": "New Tree",
+      "signOut": "Sign out",
+      "loading": "Loading profile..."
+    },
+    "welcome": {
+      "title": "Welcome back, {{name}}! 👋",
+      "description": "Here's an overview of your account and profile information."
+    },
+    "stats": {
+      "accountStatus": {
+        "title": "Account Status",
+        "value": "Active",
+        "description": "Your account is fully verified"
+      },
+      "profileCompletion": {
+        "title": "Profile Completion",
+        "value": "100%",
+        "description": "All profile fields completed"
+      },
+      "securityLevel": {
+        "title": "Security Level",
+        "value": "High",
+        "description": "Email and phone verified"
+      },
+      "memberSince": {
+        "title": "Member Since",
+        "description": "Years of membership"
+      }
+    },
+    "profileCard": {
+      "editProfile": "Edit Profile",
+      "email": "Email",
+      "phone": "Phone",
+      "gender": "Gender",
+      "dateOfBirth": "Date of Birth",
+      "bloodGroup": "Blood Group",
+      "maritalStatus": "Marital Status",
+      "education": "Education",
+      "address": "Address",
+      "accountType": "Account Type",
+      "verified": "Verified",
+      "unverified": "Unverified",
+      "notProvided": "Not provided",
+      "notSpecified": "Not specified"
+    },
+    "editModal": {
+      "title": "Edit Profile",
+      "description": "Update your personal information and preferences.",
+      "form": {
+        "title": "Title",
+        "fullName": "Full Name",
+        "gender": "Gender",
+        "dateOfBirth": "Date of Birth",
+        "bloodGroup": "Blood Group",
+        "education": "Education",
+        "occupation": "Occupation",
+        "maritalStatus": "Marital Status",
+        "other": "Other",
+        "selectTitle": "Select title",
+        "selectGender": "Select gender",
+        "selectBloodGroup": "Select blood group",
+        "selectEducation": "Select education",
+        "selectOccupation": "Select occupation",
+        "selectMaritalStatus": "Select marital status",
+        "enterFullName": "Enter your full name",
+        "enterEducation": "Enter your education",
+        "enterOccupation": "Enter your occupation"
+      },
+      "options": {
+        "titles": {
+          "mr": "Mr.",
+          "mrs": "Mrs.",
+          "ms": "Ms.",
+          "other": "Other"
+        },
+        "genders": {
+          "male": "Male",
+          "female": "Female",
+          "other": "Other"
+        },
+        "bloodGroups": {
+          "aPlus": "A+",
+          "aMinus": "A-",
+          "bPlus": "B+",
+          "bMinus": "B-",
+          "abPlus": "AB+",
+          "abMinus": "AB-",
+          "oPlus": "O+",
+          "oMinus": "O-"
+        },
+        "maritalStatus": {
+          "single": "Single",
+          "married": "Married",
+          "divorced": "Divorced",
+          "widowed": "Widowed"
+        }
+      },
+      "validation": {
+        "titleRequired": "Title is required",
+        "fullNameRequired": "Full name must be at least 2 characters",
+        "genderRequired": "Gender is required",
+        "dateOfBirthRequired": "Date of birth is required",
+        "bloodGroupRequired": "Blood group is required",
+        "educationRequired": "Education is required",
+        "occupationRequired": "Occupation is required",
+        "maritalStatusRequired": "Marital status is required",
+        "educationRequiredOther": "Education is required",
+        "occupationRequiredOther": "Occupation is required"
+      },
+      "actions": {
+        "cancel": "Cancel",
+        "saveChanges": "Save Changes"
+      },
+      "messages": {
+        "profileUpdated": "Profile updated",
+        "profileUpdatedDescription": "Your profile has been updated successfully.",
+        "profileUpdateFailed": "Profile update failed",
+        "profileUpdateFailedDescription": "Please try again later."
+      }
+    }
+  }
+}

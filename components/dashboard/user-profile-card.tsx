@@ -1,6 +1,7 @@
 "use client";
 
 import type { User } from "firebase/auth";
+import { useTranslation } from "react-i18next";
 import {
   Card,
   CardContent,
@@ -27,6 +28,8 @@ export default function UserProfileCard({
   userProfile,
   onEdit,
 }: UserProfileCardProps) {
+  const { t } = useTranslation("common");
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -61,34 +64,41 @@ export default function UserProfileCard({
             </div>
             <Button onClick={onEdit} variant="outline" size="sm">
               <Icons.user className="mr-2 h-4 w-4" />
-              Edit Profile
+              {t("userProfile.profileCard.editProfile")}
             </Button>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Email</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {t("userProfile.profileCard.email")}
+              </p>
               <div className="flex items-center space-x-2">
                 <p className="text-sm">{user.email}</p>
                 <Badge
                   variant={user.emailVerified ? "default" : "secondary"}
                   className="text-xs"
                 >
-                  {user.emailVerified ? "Verified" : "Unverified"}
+                  {user.emailVerified
+                    ? t("userProfile.profileCard.verified")
+                    : t("userProfile.profileCard.unverified")}
                 </Badge>
               </div>
             </div>
 
             <div className="space-y-2">
-              <p className="text-sm font-medium text-muted-foreground">Phone</p>
+              <p className="text-sm font-medium text-muted-foreground">
+                {t("userProfile.profileCard.phone")}
+              </p>
               <div className="flex items-center space-x-2">
                 <p className="text-sm">
-                  {userProfile.phoneNumber || "Not provided"}
+                  {userProfile.phoneNumber ||
+                    t("userProfile.profileCard.notProvided")}
                 </p>
                 {userProfile.phoneNumber && (
                   <Badge variant="default" className="text-xs">
-                    Verified
+                    {t("userProfile.profileCard.verified")}
                   </Badge>
                 )}
               </div>
@@ -96,54 +106,58 @@ export default function UserProfileCard({
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Gender
+                {t("userProfile.profileCard.gender")}
               </p>
               <p className="text-sm capitalize">
-                {userProfile.profile?.gender || "Not specified"}
+                {userProfile.profile?.gender ||
+                  t("userProfile.profileCard.notSpecified")}
               </p>
             </div>
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Date of Birth
+                {t("userProfile.profileCard.dateOfBirth")}
               </p>
               <p className="text-sm">
                 {userProfile.profile?.dateOfBirth
                   ? format(new Date(userProfile.profile.dateOfBirth), "PPP")
-                  : "Not provided"}
+                  : t("userProfile.profileCard.notProvided")}
               </p>
             </div>
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Blood Group
+                {t("userProfile.profileCard.bloodGroup")}
               </p>
               <p className="text-sm uppercase">
-                {userProfile.profile?.bloodGroup || "Not provided"}
+                {userProfile.profile?.bloodGroup ||
+                  t("userProfile.profileCard.notProvided")}
               </p>
             </div>
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Marital Status
+                {t("userProfile.profileCard.maritalStatus")}
               </p>
               <p className="text-sm capitalize">
-                {userProfile.profile?.maritalStatus || "Not specified"}
+                {userProfile.profile?.maritalStatus ||
+                  t("userProfile.profileCard.notSpecified")}
               </p>
             </div>
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Education
+                {t("userProfile.profileCard.education")}
               </p>
               <p className="text-sm">
-                {userProfile.profile?.education || "Not provided"}
+                {userProfile.profile?.education ||
+                  t("userProfile.profileCard.notProvided")}
               </p>
             </div>
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Address
+                {t("userProfile.profileCard.address")}
               </p>
               <p className="text-sm">
                 {userProfile.address?.street &&
@@ -157,7 +171,7 @@ export default function UserProfileCard({
 
             <div className="space-y-2">
               <p className="text-sm font-medium text-muted-foreground">
-                Account Type
+                {t("userProfile.profileCard.accountType")}
               </p>
               <Badge variant="outline" className="capitalize">
                 {userProfile.provider}

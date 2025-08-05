@@ -2,6 +2,7 @@
 
 import { Icons } from "@/components/icons";
 import { motion } from "framer-motion";
+import { useTranslation } from "react-i18next";
 
 interface OnboardingProgressProps {
   currentStep: "phone" | "profile" | "success";
@@ -10,9 +11,19 @@ interface OnboardingProgressProps {
 export default function OnboardingProgress({
   currentStep,
 }: OnboardingProgressProps) {
+  const { t, ready } = useTranslation("common");
+
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center">
+        <div className="w-8 h-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+      </div>
+    );
+  }
+
   const steps = [
-    { id: "phone", name: "Phone Verification", icon: Icons.phone },
-    { id: "profile", name: "Profile Setup", icon: Icons.user },
+    { id: "phone", name: t("onboarding.steps.phone"), icon: Icons.phone },
+    { id: "profile", name: t("onboarding.steps.profile"), icon: Icons.user },
   ];
 
   const currentStepIndex = steps.findIndex((step) => step.id === currentStep);

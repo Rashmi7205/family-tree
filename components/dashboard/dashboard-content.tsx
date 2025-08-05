@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import type { User } from "firebase/auth";
+import { useTranslation } from "react-i18next";
 
 import {
   Card,
@@ -26,33 +27,34 @@ export default function DashboardContent({
   userProfile,
 }: DashboardContentProps) {
   const [showEditModal, setShowEditModal] = useState(false);
+  const { t } = useTranslation("common");
 
   const stats = [
     {
-      title: "Account Status",
-      value: "Active",
-      description: "Your account is fully verified",
+      title: t("userProfile.stats.accountStatus.title"),
+      value: t("userProfile.stats.accountStatus.value"),
+      description: t("userProfile.stats.accountStatus.description"),
       icon: Icons.user,
       color: "text-green-600",
     },
     {
-      title: "Profile Completion",
-      value: "100%",
-      description: "All profile fields completed",
+      title: t("userProfile.stats.profileCompletion.title"),
+      value: t("userProfile.stats.profileCompletion.value"),
+      description: t("userProfile.stats.profileCompletion.description"),
       icon: Icons.check,
       color: "text-blue-600",
     },
     {
-      title: "Security Level",
-      value: "High",
-      description: "Email and phone verified",
+      title: t("userProfile.stats.securityLevel.title"),
+      value: t("userProfile.stats.securityLevel.value"),
+      description: t("userProfile.stats.securityLevel.description"),
       icon: Icons.shield,
       color: "text-purple-600",
     },
     {
-      title: "Member Since",
+      title: t("userProfile.stats.memberSince.title"),
       value: new Date(userProfile.createdAt).getFullYear().toString(),
-      description: "Years of membership",
+      description: t("userProfile.stats.memberSince.description"),
       icon: Icons.calendar,
       color: "text-orange-600",
     },
@@ -67,10 +69,10 @@ export default function DashboardContent({
         transition={{ duration: 0.5 }}
       >
         <h2 className="text-3xl font-bold tracking-tight">
-          Welcome back, {userProfile.profile?.fullName || user.displayName}! 👋
+          {t("userProfile.welcome.title", { name: userProfile.profile?.fullName || user.displayName })}
         </h2>
         <p className="text-muted-foreground">
-          Here's an overview of your account and profile information.
+          {t("userProfile.welcome.description")}
         </p>
       </motion.div>
 

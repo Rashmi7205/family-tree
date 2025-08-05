@@ -3,9 +3,19 @@
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle, Sparkles, ArrowRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function OnboardingSuccess() {
+  const { t, ready } = useTranslation("common");
   const [showConfetti, setShowConfetti] = useState(false);
+
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center py-16">
+        <div className="w-8 h-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   useEffect(() => {
     setShowConfetti(true);
@@ -113,11 +123,10 @@ export default function OnboardingSuccess() {
         className="space-y-4 max-w-md"
       >
         <h2 className="text-3xl font-bold text-gray-900 dark:text-white">
-          Welcome Aboard! 🎉
+          {t("onboarding.success.title")}
         </h2>
         <p className="text-lg text-gray-600 dark:text-gray-400">
-          Your profile has been successfully completed. You're all set to
-          explore your dashboard!
+          {t("onboarding.success.message")}
         </p>
       </motion.div>
 

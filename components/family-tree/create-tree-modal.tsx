@@ -4,6 +4,7 @@ import type React from "react";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -37,10 +38,11 @@ export function CreateTreeModal({
     description: "",
     isPublic: false,
   });
-  const {user} = useAuth();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const router = useRouter();
+  const { t } = useTranslation("common");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,7 +63,9 @@ export function CreateTreeModal({
       if (!response.ok) {
         const errorData = await response.json();
         console.error("API error:", errorData);
-        throw new Error(errorData.error || "Failed to create family tree");
+        throw new Error(
+          errorData.error || t("createTree.errors.failedToCreate")
+        );
       }
 
       const newTree = await response.json();
@@ -83,7 +87,9 @@ export function CreateTreeModal({
     } catch (err) {
       console.error("Form submission error:", err);
       setError(
-        err instanceof Error ? err.message : "Failed to create family tree"
+        err instanceof Error
+          ? err.message
+          : t("createTree.errors.failedToCreate")
       );
     } finally {
       setIsLoading(false);
@@ -118,11 +124,9 @@ export function CreateTreeModal({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <TreePine className="h-5 w-5 text-green-600" />
-            Create New Family Tree
+            {t("createTree.title")}
           </DialogTitle>
-          <DialogDescription>
-            Start building your family history by creating a new family tree.
-          </DialogDescription>
+          <DialogDescription>{t("createTree.description")}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -134,29 +138,31 @@ export function CreateTreeModal({
 
           {/* Tree Name */}
           <div className="space-y-2">
-            <Label htmlFor="name">Family Tree Name *</Label>
+            <Label htmlFor="name">{t("createTree.form.name")}</Label>
             <Input
               id="name"
               required
               value={formData.name}
               onChange={(e) => handleInputChange("name", e.target.value)}
-              placeholder="e.g., The Smith Family"
+              placeholder={t("createTree.form.namePlaceholder")}
               disabled={isLoading}
             />
             <p className="text-xs text-gray-500">
-              Choose a name for your family tree
+              {t("createTree.form.nameHelp")}
             </p>
           </div>
 
           {/* Description */}
           <div className="space-y-2">
-            <Label htmlFor="description">Description (Optional)</Label>
+            <Label htmlFor="description">
+              {t("createTree.form.description")}
+            </Label>
             <Textarea
               id="description"
               rows={3}
               value={formData.description}
               onChange={(e) => handleInputChange("description", e.target.value)}
-              placeholder="Describe your family tree..."
+              placeholder={t("createTree.form.descriptionPlaceholder")}
               disabled={isLoading}
             />
           </div>
@@ -172,13 +178,15 @@ export function CreateTreeModal({
                     <Lock className="h-4 w-4 text-gray-600" />
                   )}
                   <Label htmlFor="isPublic" className="font-medium">
-                    {formData.isPublic ? "Public Tree" : "Private Tree"}
+                    {formData.isPublic
+                      ? t("createTree.form.privacy.publicTree")
+                      : t("createTree.form.privacy.privateTree")}
                   </Label>
                 </div>
                 <p className="text-sm text-gray-600">
                   {formData.isPublic
-                    ? "Anyone with the link can view this tree"
-                    : "Only you can view this tree"}
+                    ? t("createTree.form.privacy.publicDescription")
+                    : t("createTree.form.privacy.privateDescription")}
                 </p>
               </div>
               <Switch
@@ -201,7 +209,7 @@ export function CreateTreeModal({
               className="w-full sm:w-auto"
             >
               <X className="h-4 w-4 mr-2" />
-              Cancel
+              {t("createTree.form.buttons.cancel")}
             </Button>
             <Button
               type="submit"
@@ -209,7 +217,9 @@ export function CreateTreeModal({
               className="w-full sm:w-auto"
             >
               <Save className="h-4 w-4 mr-2" />
-              {isLoading ? "Creating..." : "Create Family Tree"}
+              {isLoading
+                ? t("createTree.form.buttons.creating")
+                : t("createTree.form.buttons.create")}
             </Button>
           </DialogFooter>
         </form>

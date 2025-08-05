@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,6 +119,7 @@ function ShareTreeDialog({
   url: string;
 }) {
   const [copied, setCopied] = useState(false);
+  const { t } = useTranslation("common");
   const shareText = encodeURIComponent("Check out this family tree!");
   const QRSVG = ({ value, size = 160 }: { value: string; size?: number }) => {
     const qr = new QR(value);
@@ -158,7 +160,8 @@ function ShareTreeDialog({
       <DialogContent className="max-w-sm w-full p-0 overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Share2 className="w-5 h-5 text-green-600" /> Share this Tree
+            <Share2 className="w-5 h-5 text-green-600" />{" "}
+            {t("trees.share.title")}
           </DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center gap-4 p-4">
@@ -177,12 +180,14 @@ function ShareTreeDialog({
               className="w-full sm:w-auto flex items-center justify-center gap-1"
             >
               <Copy className="w-4 h-4 text-green-600" />
-              {copied ? "Copied!" : "Copy Link"}
+              {copied ? t("trees.share.copied") : t("trees.share.copyLink")}
             </Button>
           </div>
           <div className="border-t border-gray-100 dark:border-gray-800 my-2 w-full" />
           <div className="px-4 flex flex-col items-center gap-1 w-full">
-            <span className="text-xs text-gray-500">Share via</span>
+            <span className="text-xs text-gray-500">
+              {t("trees.share.shareVia")}
+            </span>
             <div className="flex justify-center gap-3">
               {[
                 {
@@ -233,7 +238,7 @@ function ShareTreeDialog({
             </div>
           </div>
           <div className="text-center text-[10px] text-gray-500 dark:text-gray-400 p-3 border-t border-gray-100 dark:border-gray-800 bg-gray-50 dark:bg-gray-900 w-full">
-            Anyone with this link can view this tree.
+            {t("trees.share.anyoneWithLink")}
           </div>
         </div>
       </DialogContent>
@@ -250,13 +255,14 @@ function DashboardHeader({
   onResetView: () => void;
 }) {
   const router = useRouter();
+  const { t } = useTranslation("common");
   return (
     <Header
-      treeName="My Family Trees"
+      treeName={t("trees.title")}
       extraActions={
         <Button onClick={onNewTree}>
           <Plus className="h-4 w-4 mr-2" />
-          New Tree
+          {t("trees.newTree")}
         </Button>
       }
       showProfile={true}
@@ -273,6 +279,7 @@ function StatsAndCalendarSection({
   stats: Statistics;
   treesLength: number;
 }) {
+  const { t } = useTranslation("common");
   return (
     <div className="w-full flex flex-col gap-4 md:gap-6 mb-6">
       <div className="flex flex-col md:flex-row gap-4 md:gap-6">
@@ -280,10 +287,10 @@ function StatsAndCalendarSection({
         <div className="flex-1">
           <Card className="h-full flex flex-col justify-center rounded-2xl shadow-sm">
             <CardContent className="h-full flex flex-col justify-center items-center p-3 md:p-6">
-              <h3>Your Tree Stats</h3>
+              <h3>{t("trees.stats.title")}</h3>
               <div className="grid grid-cols-2 gap-2 md:gap-4 h-full items-center justify-center">
                 <StatCard
-                  label="Total Trees"
+                  label={t("trees.stats.totalTrees")}
                   value={treesLength}
                   imageSrc="/assets/tree.png"
                   variant="green"
@@ -292,7 +299,7 @@ function StatsAndCalendarSection({
                   padding="p-2"
                 />
                 <StatCard
-                  label="Family Members"
+                  label={t("trees.stats.familyMembers")}
                   value={stats.totalMembers}
                   imageSrc="/assets/member.png"
                   variant="blue"
@@ -301,7 +308,7 @@ function StatsAndCalendarSection({
                   padding="p-2"
                 />
                 <StatCard
-                  label="Public Trees"
+                  label={t("trees.stats.publicTrees")}
                   value={stats.publicTrees}
                   imageSrc="/assets/family-tree.png"
                   variant="purple"
@@ -310,7 +317,7 @@ function StatsAndCalendarSection({
                   padding="p-2"
                 />
                 <StatCard
-                  label="Private Trees"
+                  label={t("trees.stats.privateTrees")}
                   value={stats.privateTrees}
                   imageSrc="/assets/secure.png"
                   variant="gray"
@@ -355,12 +362,13 @@ function FiltersSection({
   activeFilters: React.ReactNode[];
   clearFilters: () => void;
 }) {
+  const { t } = useTranslation("common");
   return (
     <Card className="mb-4 md:mb-6">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base sm:text-lg md:text-xl">
           <Filter className="h-5 w-5 sm:h-6 sm:w-6" />
-          Filter & Search
+          {t("trees.filters.title")}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -369,7 +377,7 @@ function FiltersSection({
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
               <Input
-                placeholder="Search family trees..."
+                placeholder={t("trees.filters.searchPlaceholder")}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10 text-sm sm:text-base"
@@ -379,24 +387,34 @@ function FiltersSection({
 
           <Select value={filterBy} onValueChange={setFilterBy}>
             <SelectTrigger className="w-full md:w-40 text-sm sm:text-base">
-              <SelectValue placeholder="Filter by" />
+              <SelectValue placeholder={t("trees.filters.filterBy")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Trees</SelectItem>
-              <SelectItem value="public">Public Only</SelectItem>
-              <SelectItem value="private">Private Only</SelectItem>
+              <SelectItem value="all">{t("trees.filters.allTrees")}</SelectItem>
+              <SelectItem value="public">
+                {t("trees.filters.publicOnly")}
+              </SelectItem>
+              <SelectItem value="private">
+                {t("trees.filters.privateOnly")}
+              </SelectItem>
             </SelectContent>
           </Select>
 
           <Select value={sortBy} onValueChange={setSortBy}>
             <SelectTrigger className="w-full md:w-40 text-sm sm:text-base">
-              <SelectValue placeholder="Sort by" />
+              <SelectValue placeholder={t("trees.filters.sortBy")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="updated">Last Updated</SelectItem>
-              <SelectItem value="created">Date Created</SelectItem>
-              <SelectItem value="name">Name A-Z</SelectItem>
-              <SelectItem value="members">Most Members</SelectItem>
+              <SelectItem value="updated">
+                {t("trees.filters.lastUpdated")}
+              </SelectItem>
+              <SelectItem value="created">
+                {t("trees.filters.dateCreated")}
+              </SelectItem>
+              <SelectItem value="name">{t("trees.filters.nameAZ")}</SelectItem>
+              <SelectItem value="members">
+                {t("trees.filters.mostMembers")}
+              </SelectItem>
             </SelectContent>
           </Select>
 
@@ -422,11 +440,11 @@ function FiltersSection({
         {activeFilters.length > 0 && (
           <div className="flex flex-wrap items-center gap-2 mt-4 pt-4 border-t">
             <span className="text-xs sm:text-sm md:text-base text-foreground">
-              Active filters:
+              {t("trees.filters.activeFilters")}
             </span>
             {activeFilters}
             <Button variant="ghost" size="sm" onClick={clearFilters}>
-              Clear all
+              {t("trees.filters.clearAll")}
             </Button>
           </div>
         )}
@@ -467,6 +485,7 @@ function TreesResultsSection({
   setViewMode: (v: ViewMode) => void;
   setShowCreateModal: (v: boolean) => void;
 }) {
+  const { t } = useTranslation("common");
   return (
     <>
       {/* Trees Grid/List */}
@@ -477,25 +496,24 @@ function TreesResultsSection({
               <>
                 <TreePine className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mb-4" />
                 <h3 className="text-base sm:text-lg md:text-xl font-medium text-foreground mb-2">
-                  No family trees yet
+                  {t("trees.results.noTreesYet")}
                 </h3>
                 <p className="text-xs sm:text-base md:text-lg text-foreground mb-6">
-                  Get started by creating your first family tree to begin
-                  documenting your family history.
+                  {t("trees.results.noTreesDescription")}
                 </p>
                 <Button onClick={() => setShowCreateModal(true)}>
                   <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Tree
+                  {t("trees.results.createFirstTree")}
                 </Button>
               </>
             ) : (
               <>
                 <Search className="mx-auto h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mb-4" />
                 <h3 className="text-base sm:text-lg md:text-xl font-medium text-foreground mb-2">
-                  No trees found
+                  {t("trees.results.noTreesFound")}
                 </h3>
                 <p className="text-xs sm:text-base md:text-lg text-foreground mb-6">
-                  No family trees match your current search and filter criteria.
+                  {t("trees.results.noTreesFoundDescription")}
                 </p>
                 <Button
                   variant="outline"
@@ -505,7 +523,7 @@ function TreesResultsSection({
                     setSortBy("updated");
                   }}
                 >
-                  Clear Filters
+                  {t("trees.results.clearFilters")}
                 </Button>
               </>
             )}
@@ -516,7 +534,9 @@ function TreesResultsSection({
           {/* Results Summary */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-2 md:mb-4 gap-2">
             <p className="text-xs sm:text-sm md:text-base text-foreground">
-              Showing {filteredTrees.length} of {trees.length} family trees
+              {t("trees.results.showing")} {filteredTrees.length}{" "}
+              {t("trees.results.of")} {trees.length}{" "}
+              {t("trees.results.familyTrees")}
             </p>
             <div className="flex items-center gap-2">
               <BarChart3 className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
@@ -525,7 +545,7 @@ function TreesResultsSection({
                   (sum, tree) => sum + tree._count.members,
                   0
                 )}{" "}
-                total members
+                {t("trees.results.totalMembers")}
               </span>
             </div>
           </div>
@@ -584,6 +604,7 @@ export default function TreesPage() {
   const [shareDialogOpen, setShareDialogOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const { toast } = useToast();
+  const { t } = useTranslation("common");
   const [editingTree, setEditingTree] = useState<FamilyTree | null>(null);
   const [editForm, setEditForm] = useState({
     name: "",
@@ -696,22 +717,22 @@ export default function TreesPage() {
       });
       if (res.ok) {
         toast({
-          title: "Tree deleted",
-          description: "Family tree deleted successfully.",
+          title: t("trees.toasts.treeDeleted"),
+          description: t("trees.toasts.treeDeletedDescription"),
         });
         setTrees(trees.filter((tree) => tree.id !== deletingTreeId));
       } else {
         const data = await res.json();
         toast({
-          title: "Delete failed",
-          description: data.error || "Failed to delete tree.",
+          title: t("trees.toasts.deleteFailed"),
+          description: data.error || t("trees.toasts.deleteFailedDescription"),
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Delete failed",
-        description: "Failed to delete tree.",
+        title: t("trees.toasts.deleteFailed"),
+        description: t("trees.toasts.deleteFailedDescription"),
         variant: "destructive",
       });
     } finally {
@@ -759,23 +780,23 @@ export default function TreesPage() {
       });
       if (res.ok) {
         toast({
-          title: "Tree updated",
-          description: "Family tree updated successfully.",
+          title: t("trees.toasts.treeUpdated"),
+          description: t("trees.toasts.treeUpdatedDescription"),
         });
         fetchTrees();
         setEditingTree(null);
       } else {
         const data = await res.json();
         toast({
-          title: "Update failed",
-          description: data.error || "Failed to update tree.",
+          title: t("trees.toasts.updateFailed"),
+          description: data.error || t("trees.toasts.updateFailedDescription"),
           variant: "destructive",
         });
       }
     } catch (e) {
       toast({
-        title: "Update failed",
-        description: "Failed to update tree.",
+        title: t("trees.toasts.updateFailed"),
+        description: t("trees.toasts.updateFailedDescription"),
         variant: "destructive",
       });
     } finally {
@@ -798,7 +819,9 @@ export default function TreesPage() {
   if (filterBy !== "all")
     activeFilters.push(
       <Badge variant="secondary">
-        {filterBy === "public" ? "Public trees" : "Private trees"}
+        {filterBy === "public"
+          ? t("trees.filters.publicOnly")
+          : t("trees.filters.privateOnly")}
       </Badge>
     );
   if (sortBy !== "updated")
@@ -806,10 +829,10 @@ export default function TreesPage() {
       <Badge variant="secondary">
         Sort:{" "}
         {sortBy === "name"
-          ? "Name"
+          ? t("trees.filters.nameAZ")
           : sortBy === "created"
-          ? "Created"
-          : "Members"}
+          ? t("trees.filters.dateCreated")
+          : t("trees.filters.mostMembers")}
       </Badge>
     );
 
@@ -889,11 +912,11 @@ export default function TreesPage() {
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Edit Family Tree</DialogTitle>
+            <DialogTitle>{t("trees.edit.title")}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <Label htmlFor="edit-tree-name">Name</Label>
+              <Label htmlFor="edit-tree-name">{t("trees.edit.name")}</Label>
               <Input
                 id="edit-tree-name"
                 name="name"
@@ -903,7 +926,9 @@ export default function TreesPage() {
               />
             </div>
             <div>
-              <Label htmlFor="edit-tree-description">Description</Label>
+              <Label htmlFor="edit-tree-description">
+                {t("trees.edit.description")}
+              </Label>
               <Input
                 id="edit-tree-description"
                 name="description"
@@ -916,12 +941,12 @@ export default function TreesPage() {
                 checked={editForm.isPublic}
                 onCheckedChange={handleEditSwitch}
               />
-              <span>Public</span>
+              <span>{t("trees.edit.public")}</span>
             </div>
           </div>
           <DialogFooter>
             <Button onClick={handleEditSubmit} disabled={editLoading}>
-              Save Changes
+              {t("trees.edit.saveChanges")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -931,25 +956,22 @@ export default function TreesPage() {
       <Dialog open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Family Tree</DialogTitle>
+            <DialogTitle>{t("trees.delete.title")}</DialogTitle>
           </DialogHeader>
-          <p>
-            Are you sure you want to delete this family tree? This will also
-            delete all members and their files. This action cannot be undone.
-          </p>
+          <p>{t("trees.delete.description")}</p>
           <DialogFooter>
             <Button
               variant="outline"
               onClick={() => setDeleteConfirmOpen(false)}
             >
-              Cancel
+              {t("trees.delete.cancel")}
             </Button>
             <Button
               variant="destructive"
               onClick={handleDeleteTree}
               disabled={editLoading}
             >
-              Delete
+              {t("trees.delete.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -29,6 +29,7 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
+import { useTranslation } from "react-i18next";
 
 const profileSchema = z.object({
   title: z.string().min(1, { message: "Title is required" }),
@@ -62,7 +63,16 @@ export default function ProfileCompletionStep({
   onCompleted,
 }: ProfileCompletionStepProps) {
   const { user, refreshUserProfile, userProfile } = useAuth();
+  const { t, ready } = useTranslation("common");
   const [isLoading, setIsLoading] = useState(false);
+
+  if (!ready) {
+    return (
+      <div className="flex items-center justify-center py-8">
+        <div className="w-8 h-8 animate-spin rounded-full border-2 border-blue-500 border-t-transparent"></div>
+      </div>
+    );
+  }
 
   const [selectedAddress, setSelectedAddress] = useState<any>(null);
   const [showOtherEducation, setShowOtherEducation] = useState(false);
@@ -126,10 +136,10 @@ export default function ProfileCompletionStep({
     };
 
     setIsLoading(true);
-    const loadingToast = toast({
-      title: "Completing Profile...",
+
+    toast({
+      title: t("onboarding.profile.form.loading"),
       description: "Please wait while we save your profile.",
-      variant: "default",
     });
 
     try {
@@ -157,7 +167,7 @@ export default function ProfileCompletionStep({
       }
 
       toast({
-        title: "Profile Completed",
+        title: "Profile Completed Successfully",
         description: "Your profile has been completed successfully.",
         variant: "default",
       });
@@ -175,23 +185,22 @@ export default function ProfileCompletionStep({
       });
     } finally {
       setIsLoading(false);
-      loadingToast.dismiss();
     }
   };
 
   const titleOptions = [
-    { value: "mr", label: "Mr." },
-    { value: "mrs", label: "Mrs." },
-    { value: "ms", label: "Ms." },
-    { value: "dr", label: "Dr." },
-    { value: "prof", label: "Prof." },
-    { value: "other", label: "Other" },
+    { value: "mr", label: t("onboarding.profile.form.fields.mr") },
+    { value: "mrs", label: t("onboarding.profile.form.fields.mrs") },
+    { value: "ms", label: t("onboarding.profile.form.fields.ms") },
+    { value: "dr", label: t("onboarding.profile.form.fields.dr") },
+    { value: "prof", label: t("onboarding.profile.form.fields.prof") },
+    { value: "other", label: t("onboarding.profile.form.fields.other") },
   ];
 
   const genderOptions = [
-    { value: "male", label: "Male" },
-    { value: "female", label: "Female" },
-    { value: "other", label: "Other" },
+    { value: "male", label: t("onboarding.profile.form.fields.male") },
+    { value: "female", label: t("onboarding.profile.form.fields.female") },
+    { value: "other", label: t("onboarding.profile.form.fields.other") },
   ];
 
   const bloodGroupOptions = [
@@ -206,10 +215,10 @@ export default function ProfileCompletionStep({
   ];
 
   const maritalStatusOptions = [
-    { value: "single", label: "Single" },
-    { value: "married", label: "Married" },
-    { value: "divorced", label: "Divorced" },
-    { value: "widowed", label: "Widowed" },
+    { value: "single", label: t("onboarding.profile.form.fields.single") },
+    { value: "married", label: t("onboarding.profile.form.fields.married") },
+    { value: "divorced", label: t("onboarding.profile.form.fields.divorced") },
+    { value: "widowed", label: t("onboarding.profile.form.fields.widowed") },
   ];
 
   return (
@@ -220,10 +229,10 @@ export default function ProfileCompletionStep({
     >
       <div className="text-center">
         <h2 className="text-2xl font-semibold text-gray-900 dark:text-white mb-2">
-          Personal Information
+          {t("onboarding.profile.title")}
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Please provide your personal details to complete your profile
+          {t("onboarding.profile.subtitle")}
         </p>
       </div>
 
@@ -236,10 +245,14 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.1 }}
             className="space-y-2"
           >
-            <Label htmlFor="title">Title</Label>
+            <Label htmlFor="title">
+              {t("onboarding.profile.form.fields.title")}
+            </Label>
             <Select onValueChange={(value) => setValue("title", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select title" />
+                <SelectValue
+                  placeholder={t("onboarding.profile.form.fields.selectTitle")}
+                />
               </SelectTrigger>
               <SelectContent>
                 {titleOptions.map((option) => (
@@ -261,15 +274,18 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.2 }}
             className="space-y-2"
           >
-            <Label htmlFor="fullName">Full Name</Label>
+            <Label htmlFor="fullName">
+              {t("onboarding.profile.form.fields.fullName")}
+            </Label>
             <Input
               id="fullName"
-              placeholder="Enter your full name"
+              placeholder={t("onboarding.profile.form.fields.enterFullName")}
               {...register("fullName")}
             />
             {userProfile?.profile?.fullName && (
               <p className="text-sm text-green-600">
-                Current: {userProfile.profile.fullName}
+                {t("onboarding.profile.form.fields.current")}:{" "}
+                {userProfile.profile.fullName}
               </p>
             )}
             {errors.fullName && (
@@ -284,10 +300,14 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.3 }}
             className="space-y-2"
           >
-            <Label htmlFor="gender">Gender</Label>
+            <Label htmlFor="gender">
+              {t("onboarding.profile.form.fields.gender")}
+            </Label>
             <Select onValueChange={(value) => setValue("gender", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select gender" />
+                <SelectValue
+                  placeholder={t("onboarding.profile.form.fields.selectGender")}
+                />
               </SelectTrigger>
               <SelectContent>
                 {genderOptions.map((option) => (
@@ -309,7 +329,9 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.4 }}
             className="space-y-2"
           >
-            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+            <Label htmlFor="dateOfBirth">
+              {t("onboarding.profile.form.fields.dateOfBirth")}
+            </Label>
             <Popover>
               <PopoverTrigger asChild>
                 <Button
@@ -324,7 +346,7 @@ export default function ProfileCompletionStep({
                   {watchedDate ? (
                     format(watchedDate, "PPP")
                   ) : (
-                    <span>Pick a date</span>
+                    <span>{t("onboarding.profile.form.fields.pickDate")}</span>
                   )}
                 </Button>
               </PopoverTrigger>
@@ -333,7 +355,9 @@ export default function ProfileCompletionStep({
                   mode="single"
                   selected={watchedDate}
                   onSelect={(date) =>
-                    setValue("dateOfBirth", date, { shouldValidate: true })
+                    setValue("dateOfBirth", date || new Date(), {
+                      shouldValidate: true,
+                    })
                   }
                   disabled={(date) => {
                     const min = new Date("1900-01-01");
@@ -358,10 +382,16 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.5 }}
             className="space-y-2"
           >
-            <Label htmlFor="bloodGroup">Blood Group</Label>
+            <Label htmlFor="bloodGroup">
+              {t("onboarding.profile.form.fields.bloodGroup")}
+            </Label>
             <Select onValueChange={(value) => setValue("bloodGroup", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select blood group" />
+                <SelectValue
+                  placeholder={t(
+                    "onboarding.profile.form.fields.selectBloodGroup"
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
                 {bloodGroupOptions.map((option) => (
@@ -385,10 +415,16 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.6 }}
             className="space-y-2"
           >
-            <Label htmlFor="education">Education</Label>
+            <Label htmlFor="education">
+              {t("onboarding.profile.form.fields.education")}
+            </Label>
             <Select onValueChange={(value) => setValue("education", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select education" />
+                <SelectValue
+                  placeholder={t(
+                    "onboarding.profile.form.fields.selectEducation"
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
                 {educationOptions.map((option) => (
@@ -396,13 +432,15 @@ export default function ProfileCompletionStep({
                     {option.charAt(0).toUpperCase() + option.slice(1)}
                   </SelectItem>
                 ))}
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="other">
+                  {t("onboarding.profile.form.fields.other")}
+                </SelectItem>
               </SelectContent>
             </Select>
             {showOtherEducation && (
               <Input
                 id="otherEducation"
-                placeholder="Enter your education"
+                placeholder={t("onboarding.profile.form.fields.enterEducation")}
                 {...register("otherEducation", { required: true })}
               />
             )}
@@ -421,10 +459,16 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.7 }}
             className="space-y-2"
           >
-            <Label htmlFor="occupation">Occupation</Label>
+            <Label htmlFor="occupation">
+              {t("onboarding.profile.form.fields.occupation")}
+            </Label>
             <Select onValueChange={(value) => setValue("occupation", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select occupation" />
+                <SelectValue
+                  placeholder={t(
+                    "onboarding.profile.form.fields.selectOccupation"
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
                 {occupationOptions.map((option) => (
@@ -432,13 +476,17 @@ export default function ProfileCompletionStep({
                     {option.charAt(0).toUpperCase() + option.slice(1)}
                   </SelectItem>
                 ))}
-                <SelectItem value="other">Other</SelectItem>
+                <SelectItem value="other">
+                  {t("onboarding.profile.form.fields.other")}
+                </SelectItem>
               </SelectContent>
             </Select>
             {showOtherOccupation && (
               <Input
                 id="otherOccupation"
-                placeholder="Enter your occupation"
+                placeholder={t(
+                  "onboarding.profile.form.fields.enterOccupation"
+                )}
                 {...register("otherOccupation", { required: true })}
               />
             )}
@@ -459,10 +507,16 @@ export default function ProfileCompletionStep({
             transition={{ delay: 0.8 }}
             className="space-y-2"
           >
-            <Label htmlFor="maritalStatus">Marital Status</Label>
+            <Label htmlFor="maritalStatus">
+              {t("onboarding.profile.form.fields.maritalStatus")}
+            </Label>
             <Select onValueChange={(value) => setValue("maritalStatus", value)}>
               <SelectTrigger>
-                <SelectValue placeholder="Select marital status" />
+                <SelectValue
+                  placeholder={t(
+                    "onboarding.profile.form.fields.selectMaritalStatus"
+                  )}
+                />
               </SelectTrigger>
               <SelectContent>
                 {maritalStatusOptions.map((option) => (
@@ -487,13 +541,14 @@ export default function ProfileCompletionStep({
           transition={{ delay: 0.9 }}
           className="space-y-2 mt-8 pt-4 border-t"
         >
-          <h3 className="text-lg font-medium">Your Address</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">
-            You can select your address using Google Maps or enter it manually
-          </p>
+          <h3 className="text-lg font-medium">
+            {t("onboarding.profile.form.fields.address")}
+          </h3>
           <AddressSelector onAddressSelect={setSelectedAddress} />
           {!selectedAddress && (
-            <p className="text-sm text-red-500">Please select your address</p>
+            <p className="text-sm text-red-500">
+              {t("onboarding.profile.form.fields.pleaseSelectAddress")}
+            </p>
           )}
         </motion.div>
 
@@ -511,7 +566,9 @@ export default function ProfileCompletionStep({
             {isLoading && (
               <Icons.spinner className="mr-2 h-5 w-5 animate-spin" />
             )}
-            Complete Profile
+            {isLoading
+              ? t("onboarding.profile.form.loading")
+              : t("onboarding.profile.form.submitButton")}
           </Button>
         </motion.div>
       </form>

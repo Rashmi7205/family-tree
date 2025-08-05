@@ -17,9 +17,11 @@ import { Textarea } from "@/components/ui/textarea";
 import Image from "next/image";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
+import { useTranslation } from "react-i18next";
 
 const Footer = () => {
   const { toast } = useToast();
+  const { t } = useTranslation("common");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     firstName: "",
@@ -48,16 +50,16 @@ const Footer = () => {
   ];
 
   const mainLinks = [
-    { href: "#features", label: "Features" },
-    { href: "#about", label: "About" },
-    { href: "/auth/signin", label: "Login" },
-    { href: "/auth/signup", label: "Register" },
+    { href: "#features", label: t("homepage.footer.links.features") },
+    { href: "#about", label: t("homepage.footer.links.about") },
+    { href: "/auth/signin", label: t("homepage.footer.links.login") },
+    { href: "/auth/signup", label: t("homepage.footer.links.register") },
   ];
 
   const legalLinks = [
-    { href: "/privacy", label: "Privacy Policy" },
-    { href: "/terms", label: "Terms of Service" },
-    { href: "/contact", label: "Contact" },
+    { href: "/privacy", label: t("homepage.footer.links.privacy") },
+    { href: "/terms", label: t("homepage.footer.links.terms") },
+    { href: "/contact", label: t("homepage.footer.links.contact") },
   ];
 
   const contactInfo = [
@@ -94,16 +96,25 @@ const Footer = () => {
   const validateForm = () => {
     const errors: string[] = [];
 
-    if (!formData.firstName.trim()) errors.push("First name is required");
-    if (!formData.lastName.trim()) errors.push("Last name is required");
-    if (!formData.email.trim()) errors.push("Email is required");
-    if (!formData.subject.trim()) errors.push("Subject is required");
-    if (!formData.message.trim()) errors.push("Message is required");
+    if (!formData.firstName.trim())
+      errors.push(
+        t("homepage.footer.contact.form.validation.firstNameRequired")
+      );
+    if (!formData.lastName.trim())
+      errors.push(
+        t("homepage.footer.contact.form.validation.lastNameRequired")
+      );
+    if (!formData.email.trim())
+      errors.push(t("homepage.footer.contact.form.validation.emailRequired"));
+    if (!formData.subject.trim())
+      errors.push(t("homepage.footer.contact.form.validation.subjectRequired"));
+    if (!formData.message.trim())
+      errors.push(t("homepage.footer.contact.form.validation.messageRequired"));
 
     // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (formData.email && !emailRegex.test(formData.email)) {
-      errors.push("Please enter a valid email address");
+      errors.push(t("homepage.footer.contact.form.validation.invalidEmail"));
     }
 
     return errors;
@@ -137,7 +148,7 @@ const Footer = () => {
 
       if (response.ok) {
         toast({
-          title: "Message Sent Successfully!",
+          title: t("homepage.footer.contact.form.success"),
           description: data.message,
         });
 
@@ -152,8 +163,7 @@ const Footer = () => {
       } else {
         toast({
           title: "Error",
-          description:
-            data.error || "Failed to send message. Please try again.",
+          description: data.error || t("homepage.footer.contact.form.error"),
           variant: "destructive",
         });
       }
@@ -161,8 +171,7 @@ const Footer = () => {
       console.error("Contact form submission error:", error);
       toast({
         title: "Error",
-        description:
-          "Network error. Please check your connection and try again.",
+        description: t("homepage.footer.contact.form.networkError"),
         variant: "destructive",
       });
     } finally {
@@ -178,11 +187,11 @@ const Footer = () => {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
             {/* Contact Information */}
             <div>
-              <h3 className="text-2xl font-bold mb-6">Get in Touch</h3>
+              <h3 className="text-2xl font-bold mb-6">
+                {t("homepage.footer.contact.title")}
+              </h3>
               <p className="text-muted-foreground mb-8 max-w-md">
-                Have questions about your family tree? Need help with genealogy
-                research? We're here to help you discover and preserve your
-                family's legacy.
+                {t("homepage.footer.contact.description")}
               </p>
 
               <div className="space-y-4">
@@ -207,7 +216,9 @@ const Footer = () => {
 
             {/* Contact Form */}
             <div>
-              <h3 className="text-2xl font-bold mb-6">Send us a Message</h3>
+              <h3 className="text-2xl font-bold mb-6">
+                {t("homepage.footer.contact.form.title")}
+              </h3>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
@@ -215,13 +226,15 @@ const Footer = () => {
                       htmlFor="firstName"
                       className="block text-sm font-medium mb-2"
                     >
-                      First Name
+                      {t("homepage.footer.contact.form.firstName")}
                     </label>
                     <Input
                       id="firstName"
                       name="firstName"
                       type="text"
-                      placeholder="Enter your first name"
+                      placeholder={t(
+                        "homepage.footer.contact.form.firstNamePlaceholder"
+                      )}
                       className="w-full"
                       value={formData.firstName}
                       onChange={handleInputChange}
@@ -233,13 +246,15 @@ const Footer = () => {
                       htmlFor="lastName"
                       className="block text-sm font-medium mb-2"
                     >
-                      Last Name
+                      {t("homepage.footer.contact.form.lastName")}
                     </label>
                     <Input
                       id="lastName"
                       name="lastName"
                       type="text"
-                      placeholder="Enter your last name"
+                      placeholder={t(
+                        "homepage.footer.contact.form.lastNamePlaceholder"
+                      )}
                       className="w-full"
                       value={formData.lastName}
                       onChange={handleInputChange}
@@ -253,13 +268,15 @@ const Footer = () => {
                     htmlFor="email"
                     className="block text-sm font-medium mb-2"
                   >
-                    Email
+                    {t("homepage.footer.contact.form.email")}
                   </label>
                   <Input
                     id="email"
                     name="email"
                     type="email"
-                    placeholder="Enter your email address"
+                    placeholder={t(
+                      "homepage.footer.contact.form.emailPlaceholder"
+                    )}
                     className="w-full"
                     value={formData.email}
                     onChange={handleInputChange}
@@ -272,13 +289,15 @@ const Footer = () => {
                     htmlFor="subject"
                     className="block text-sm font-medium mb-2"
                   >
-                    Subject
+                    {t("homepage.footer.contact.form.subject")}
                   </label>
                   <Input
                     id="subject"
                     name="subject"
                     type="text"
-                    placeholder="Subject of your message"
+                    placeholder={t(
+                      "homepage.footer.contact.form.subjectPlaceholder"
+                    )}
                     className="w-full"
                     value={formData.subject}
                     onChange={handleInputChange}
@@ -291,12 +310,14 @@ const Footer = () => {
                     htmlFor="message"
                     className="block text-sm font-medium mb-2"
                   >
-                    Message
+                    {t("homepage.footer.contact.form.message")}
                   </label>
                   <Textarea
                     id="message"
                     name="message"
-                    placeholder="Type your message here..."
+                    placeholder={t(
+                      "homepage.footer.contact.form.messagePlaceholder"
+                    )}
                     className="w-full min-h-[120px]"
                     value={formData.message}
                     onChange={handleInputChange}
@@ -312,12 +333,12 @@ const Footer = () => {
                   {isSubmitting ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                      Sending...
+                      {t("homepage.footer.contact.form.sending")}
                     </>
                   ) : (
                     <>
                       <Send className="h-4 w-4 mr-2" />
-                      Send Message
+                      {t("homepage.footer.contact.form.sendButton")}
                     </>
                   )}
                 </Button>
@@ -393,9 +414,8 @@ const Footer = () => {
           </div>
           <div className="mt-6 text-sm leading-6 text-muted-foreground whitespace-nowrap lg:mt-0 lg:row-[1/3] lg:col-[1/4]">
             <div>
-              © {new Date().getFullYear()} Durga Dham Family Tree Explorer
+              © {new Date().getFullYear()} {t("homepage.footer.copyright")}
             </div>
-            <div>All rights reserved</div>
           </div>
         </div>
       </div>
