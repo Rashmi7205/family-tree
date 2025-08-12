@@ -33,6 +33,20 @@ function formatDate(date: string | undefined) {
   });
 }
 
+function getInitials(firstName?: string, lastName?: string): string {
+  const first = firstName?.trim().charAt(0).toUpperCase() || "";
+  const last = lastName?.trim().charAt(0).toUpperCase() || "";
+
+  if (first && last) {
+    return `${first}${last}`;
+  } else if (first) {
+    return first;
+  } else if (last) {
+    return last;
+  }
+  return "?";
+}
+
 const MemberCard = ({
   node,
   offset,
@@ -61,8 +75,8 @@ const MemberCard = ({
             className="w-full h-full object-cover rounded-xl"
           />
         ) : (
-          <span className="text-3xl font-bold text-gray-400">
-            {member.firstName?.[0]}
+          <span className="text-2xl font-bold text-gray-600 bg-gray-200 w-full h-full flex items-center justify-center rounded-xl">
+            {getInitials(member.firstName, member.lastName)}
           </span>
         )}
       </div>

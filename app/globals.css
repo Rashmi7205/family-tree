@@ -131,6 +131,8 @@
 
   html {
     font-family: "Poppins", sans-serif;
+    width: 100%;
+    overflow-x: hidden;
   }
   h1 {
     @apply text-h1 font-semibold text-foreground mb-4;
@@ -147,6 +149,9 @@
   }
   body {
     @apply text-body text-foreground bg-background;
+    width: 100%;
+    overflow-x: hidden;
+    min-height: 100vh;
   }
   p,
   li,
@@ -169,6 +174,13 @@
 @layer base {
   * {
     @apply border-border;
+  }
+
+  /* Prevent layout shifts during language changes */
+  #__next,
+  [data-nextjs-page] {
+    width: 100%;
+    overflow-x: hidden;
   }
 
   body {
@@ -438,6 +450,17 @@
   .btn-modern {
     @apply py-2 px-4 text-sm;
   }
+
+  /* Prevent layout shifts on mobile during language changes */
+  body {
+    width: 100vw;
+    overflow-x: hidden;
+  }
+
+  /* Ensure consistent button widths */
+  button {
+    min-width: fit-content;
+  }
 }
 
 /* Tablet Optimizations */
@@ -478,6 +501,20 @@
   .tree-connection-line {
     @apply stroke-green-800 stroke-3;
   }
+}
+
+/* Language Change Layout Stability */
+.language-stable {
+  width: 100%;
+  overflow-x: hidden;
+  contain: layout;
+}
+
+/* Prevent text overflow during language changes */
+.text-stable {
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: auto;
 }
 
 /* Reduced Motion */

@@ -246,6 +246,7 @@ function PublicTreeContent() {
   const [sheetOpen, setSheetOpen] = useState(false);
   const [sheetMember, setSheetMember] = useState<any>(null);
   const [showPoster, setShowPoster] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const posterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -297,13 +298,33 @@ function PublicTreeContent() {
   }, [fitView]);
 
   // Add export as poster logic
-  const exportAsPoster = async () => {
+  const exportAsPoster = () => {
     setShowPoster(true);
-    setTimeout(async () => {
-      if (posterRef.current) {
+    setExporting(true);
+  };
+
+  // Handle export poster generation
+  useEffect(() => {
+    if (showPoster && posterRef.current) {
+      const exportPoster = async () => {
         try {
+          // Wait for images to load, replace broken images with a placeholder
+          const images = posterRef.current?.querySelectorAll("img") || [];
+          await Promise.all(
+            Array.from(images).map((img) =>
+              img.complete
+                ? Promise.resolve()
+                : new Promise<void>((resolve) => {
+                    img.onload = () => resolve();
+                    img.onerror = () => {
+                      img.src = "/placeholder.svg";
+                      resolve();
+                    };
+                  })
+            )
+          );
           const htmlToImage = await import("html-to-image");
-          const dataUrl = await htmlToImage.toPng(posterRef.current, {
+          const dataUrl = await htmlToImage.toPng(posterRef.current!, {
             quality: 1.0,
           });
           const link = document.createElement("a");
@@ -316,15 +337,15 @@ function PublicTreeContent() {
           document.body.removeChild(link);
         } catch (err) {
           alert(t("familyTreeViewer.export.failed"));
+          console.error(err);
         } finally {
           setShowPoster(false);
+          setExporting(false);
         }
-      } else {
-        alert(t("familyTreeViewer.export.failed"));
-        setShowPoster(false);
-      }
-    }, 100);
-  };
+      };
+      exportPoster();
+    }
+  }, [showPoster, t]);
 
   // Re-enable pointer events on nodes after modal closes
   useEffect(() => {
@@ -386,6 +407,7 @@ function PublicTreeContent() {
               size="icon"
               className="h-10 w-10 min-w-[44px] min-h-[44px] hidden md:flex"
               title={t("familyTreeViewer.export.title")}
+              disabled={exporting}
             >
               <Download className="h-5 w-5" />
             </Button>
@@ -396,6 +418,7 @@ function PublicTreeContent() {
               variant="outline"
               size="sm"
               className="md:hidden"
+              disabled={exporting}
             >
               <Download className="w-4 h-4 mr-2" />
               {t("familyTreeViewer.export.title")}

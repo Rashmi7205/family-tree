@@ -11,9 +11,9 @@ import {
 import { useTranslation } from "react-i18next";
 
 const languages = [
-  { code: "en", name: "English", flag: "🇺🇸" },
-  { code: "hi", name: "हिंदी", flag: "🇮🇳" },
-  { code: "gu", name: "ગુજરાતી", flag: "🇮🇳" },
+  { code: "en", name: "English", letter: "EN" },
+  { code: "hi", name: "हिंदी", letter: "हि" },
+  { code: "gu", name: "ગુજરાતી", letter: "ગુ" },
 ];
 
 export function LanguageSwitcher() {
@@ -33,6 +33,9 @@ export function LanguageSwitcher() {
 
     // Change language without page reload
     i18n.changeLanguage(languageCode);
+
+    // Force a reflow to prevent layout shifts
+    document.body.offsetHeight;
   };
 
   const currentLang = languages.find((lang) => lang.code === currentLanguage);
@@ -40,9 +43,12 @@ export function LanguageSwitcher() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="flex items-center gap-2">
-          <span className="text-lg">{currentLang?.flag}</span>
-          <span className="hidden sm:inline">{currentLang?.name}</span>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="flex items-center justify-start"
+        >
+          <span className="text-lg font-semibold">{currentLang?.letter}</span>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
@@ -52,7 +58,9 @@ export function LanguageSwitcher() {
             onClick={() => handleLanguageChange(language.code)}
             className={currentLanguage === language.code ? "bg-accent" : ""}
           >
-            <span className="mr-2 text-lg">{language.flag}</span>
+            <span className="mr-2 text-lg font-semibold">
+              {language.letter}
+            </span>
             {language.name}
           </DropdownMenuItem>
         ))}
