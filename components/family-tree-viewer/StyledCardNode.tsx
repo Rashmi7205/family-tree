@@ -51,7 +51,15 @@ const StyledCardNode = ({ data }: { data: any }) => {
       <Handle
         type="target"
         position={Position.Top}
+        id="top"
         className="w-2 h-2 bg-transparent border-0"
+      />
+      {/* Spouse target handle on the left side (middle) */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="spouse-left"
+        className="w-2 h-2 bg-transparent border-0 top-1/2 -translate-y-1/2"
       />
       <Card
         className={cn(
@@ -119,7 +127,15 @@ const StyledCardNode = ({ data }: { data: any }) => {
       <Handle
         type="source"
         position={Position.Bottom}
+        id="bottom"
         className="w-2 h-2 bg-transparent border-0"
+      />
+      {/* Spouse source handle on the right side (middle) */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="spouse-right"
+        className="w-2 h-2 bg-transparent border-0 top-1/2 -translate-y-1/2"
       />
     </div>
   );

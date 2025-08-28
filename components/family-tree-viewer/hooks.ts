@@ -246,7 +246,6 @@ export const useFamilyTree = (treeId: string) => {
           position: node.position,
           data: node.data,
         }));
-
       }, 0);
     },
     [onNodesChange, nodes]
@@ -254,7 +253,6 @@ export const useFamilyTree = (treeId: string) => {
 
   // Utility function to manually log current positions (can be called from console)
   const logCurrentPositions = useCallback(() => {
-
     // Also log as JSON for easy copying
     const positions = nodes.map((node) => ({
       id: node.id,
@@ -263,7 +261,6 @@ export const useFamilyTree = (treeId: string) => {
       y: Math.round(node.position.y),
     }));
   }, [nodes]);
-
 
   const graphData = useMemo(() => {
     // If using custom positions, use them directly
@@ -339,11 +336,12 @@ export const useFamilyTree = (treeId: string) => {
       return { nodes: newNodes, edges: newEdges };
     }
 
-
     // --- CONFIGURABLE SPACING ---
-    const spacingX = 520;
-    const spacingY = 320;
+    const spacingX = 320;
+    const baseSpacingY = 320;
+    const extraSpacingWhenCouples = 140;
     const coupleSpacing = 280;
+    const singleNodeWidth = 260;
     const canvasCenter = 0;
 
     // --- 1. Build member and couple maps ---
@@ -430,7 +428,22 @@ export const useFamilyTree = (treeId: string) => {
 
     // --- 4. Recursive X-positioning ---
     const nodePositions = new Map<string, { x: number; y: number }>();
-    const maxGen = Math.max(...Array.from(generationMap.values()));
+    const generationsArray = Array.from(
+      new Set(Array.from(generationMap.values()))
+    );
+    const topGen = Math.max(...generationsArray);
+    const bottomGen = Math.min(...generationsArray);
+    // Build a Y-position map per generation with extra spacing when couples exist in that generation
+    const genToY = new Map<number, number>();
+    let currentY = 0;
+    for (let gen = topGen; gen >= bottomGen; gen--) {
+      const membersInGen = members.filter(
+        (m) => generationMap.get(m.id) === gen
+      );
+      const hasCouples = membersInGen.some((m) => !!m.spouseId);
+      genToY.set(gen, currentY);
+      currentY += baseSpacingY + (hasCouples ? extraSpacingWhenCouples : 0);
+    }
     function layoutGroup(
       siblingGroup: string[],
       gen: number,
@@ -482,7 +495,7 @@ export const useFamilyTree = (treeId: string) => {
           }
         }
         // Place the unit at centerX
-        const y = (maxGen - gen) * spacingY;
+        const y = genToY.get(gen) ?? 0;
         if (unit.length === 2) {
           nodePositions.set(unit[0], {
             x: centerX - coupleSpacing / 2,
@@ -496,32 +509,16 @@ export const useFamilyTree = (treeId: string) => {
           nodePositions.set(unit[0], { x: centerX, y });
         }
         childCenters.push(centerX);
-        xCursor = centerX + spacingX;
+        // Advance cursor by actual unit width to avoid horizontal overlap
+        const unitWidth = unit.length === 2 ? coupleSpacing : singleNodeWidth;
+        xCursor = centerX + unitWidth / 2 + spacingX;
       });
-      // Center the group horizontally
-      if (childCenters.length > 0) {
-        const minX = Math.min(...childCenters);
-        const maxX = Math.max(...childCenters);
-        const groupCenter = (minX + maxX) / 2;
-        const shift = canvasCenter - groupCenter;
-        siblingGroup.forEach((id) => {
-          const pos = nodePositions.get(id);
-          if (pos) nodePositions.set(id, { x: pos.x + shift, y: pos.y });
-          const spouseId = coupleMap.get(id);
-          if (spouseId) {
-            const spos = nodePositions.get(spouseId);
-            if (spos)
-              nodePositions.set(spouseId, { x: spos.x + shift, y: spos.y });
-          }
-        });
-      }
-      // Return the center X of this group
-      return childCenters.length > 0
-        ? (Math.min(...childCenters) + Math.max(...childCenters)) / 2
-        : xCursor;
+      // Do not re-center groups to canvas to avoid overlapping across groups.
+      // Return the group's right edge so the caller can continue laying out
+      // subsequent groups with consistent spacing.
+      return xCursor - spacingX;
     }
     // Start layout from the topmost generation
-    const topGen = Math.max(...Array.from(generationMap.values()));
     const topGroups = siblingsByGen.get(topGen) || [];
     let xStart = 0;
     topGroups.forEach((group) => {
@@ -536,13 +533,13 @@ export const useFamilyTree = (treeId: string) => {
       if (!positionedIds.has(id)) {
         // Find the next available X in this generation
         const others = Array.from(nodePositions.entries())
-          .filter(([_, pos]) => pos.y === (maxGen - gen) * spacingY)
+          .filter(([_, pos]) => pos.y === (genToY.get(gen) ?? 0))
           .map(([_, pos]) => pos.x);
         let x = 0;
         if (others.length > 0) {
           x = Math.max(...others) + spacingX;
         }
-        nodePositions.set(id, { x, y: (maxGen - gen) * spacingY });
+        nodePositions.set(id, { x, y: genToY.get(gen) ?? 0 });
       }
     }
 
@@ -571,6 +568,8 @@ export const useFamilyTree = (treeId: string) => {
           target: member.id,
           type: "smoothstep",
           style: { stroke: "#3b82f6", strokeWidth: 2 },
+          sourceHandle: "bottom",
+          targetHandle: "top",
         });
       });
     });
@@ -587,6 +586,8 @@ export const useFamilyTree = (treeId: string) => {
           target: member.spouseId,
           type: "straight",
           style: { stroke: "#ec4899", strokeWidth: 2, strokeDasharray: "5,5" },
+          sourceHandle: "spouse-right",
+          targetHandle: "spouse-left",
         });
         spouseEdges.add(`${member.id}-${member.spouseId}`);
         spouseEdges.add(`${member.spouseId}-${member.id}`);
@@ -817,7 +818,6 @@ export const usePublicFamilyTree = (treeId: string) => {
 
       const treeData = await treeRes.json();
 
-
       // Load custom positions if they exist
       loadCustomPositions(treeData);
 
@@ -892,7 +892,6 @@ export const usePublicFamilyTree = (treeId: string) => {
       );
 
       if (membersWithoutCustomPos.length > 0) {
-
         // Use auto-layout for members without custom positions
         // Helper function to assign generation
         function assignGeneration(
@@ -946,6 +945,23 @@ export const usePublicFamilyTree = (treeId: string) => {
           (a, b) => a - b
         );
 
+        // Dynamic Y spacing per generation based on presence of couples
+        const baseSpacingY = 150;
+        const extraSpacingWhenCouples = 220;
+        const gens = Array.from(new Set(Array.from(generations.values()))).sort(
+          (a, b) => a - b
+        );
+        const genToY = new Map<number, number>();
+        let yCursor = 0;
+        gens.forEach((gen) => {
+          const membersInGen = (generationGroups.get(gen) || []).map(
+            (id) => memberMap.get(id)!
+          );
+          const hasCouples = membersInGen.some((m) => m && !!m.spouseId);
+          genToY.set(gen, yCursor);
+          yCursor += baseSpacingY + (hasCouples ? extraSpacingWhenCouples : 0);
+        });
+
         // Layout function for a group of siblings
         function layoutGroup(
           siblingGroup: string[],
@@ -961,8 +977,8 @@ export const usePublicFamilyTree = (treeId: string) => {
             const member = memberMap.get(memberId);
             if (!member) return;
 
-            // Auto-layout
-            const y = gen * 250;
+            // Auto-layout with dynamic Y
+            const y = genToY.get(gen) ?? gen * 250;
             newNodes.push({
               id: memberId,
               type: "familyMember",
@@ -1019,7 +1035,7 @@ export const usePublicFamilyTree = (treeId: string) => {
               const member = memberMap.get(memberId);
               if (member) {
                 // Create individual node for unprocessed member
-                const y = gen * 250;
+                const y = genToY.get(gen) ?? gen * 250;
                 newNodes.push({
                   id: memberId,
                   type: "familyMember",
@@ -1088,8 +1104,6 @@ export const usePublicFamilyTree = (treeId: string) => {
       members.forEach((member) => {
         generations.set(member.id, assignGeneration(member.id));
       });
-
-
 
       // Group members by generation
       const generationGroups = new Map<number, string[]>();
@@ -1166,7 +1180,6 @@ export const usePublicFamilyTree = (treeId: string) => {
             return memberParents.some((p) => siblingParents.includes(p));
           });
 
-
           siblingGroups.push(siblings);
           siblings.forEach((s) => processed.add(s));
         });
@@ -1212,6 +1225,8 @@ export const usePublicFamilyTree = (treeId: string) => {
               target: member.id,
               type: "smoothstep",
               style: { stroke: "#FFFFFF", strokeWidth: 2 },
+              sourceHandle: "bottom",
+              targetHandle: "top",
             });
           }
         });
@@ -1231,12 +1246,14 @@ export const usePublicFamilyTree = (treeId: string) => {
               id: `spouse-${edgeId}`,
               source: member.id,
               target: member.spouseId,
-              type: "smoothstep",
+              type: "straight",
               style: {
                 stroke: "#FF69B4",
                 strokeWidth: 2,
                 strokeDasharray: "5,5",
               },
+              sourceHandle: "spouse-right",
+              targetHandle: "spouse-left",
             });
           }
         }

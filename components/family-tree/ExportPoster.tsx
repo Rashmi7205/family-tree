@@ -9,9 +9,9 @@ interface ExportPosterProps {
 }
 
 const genderBg: Record<string, string> = {
-  male: "bg-blue-100 border-blue-200",
-  female: "bg-pink-100 border-pink-200",
-  other: "bg-purple-100 border-purple-200",
+  male: "bg-indigo-100 border-indigo-300",
+  female: "bg-rose-100 border-rose-300",
+  other: "bg-purple-100 border-purple-300",
 };
 
 const genderText: Record<string, string> = {
@@ -158,7 +158,7 @@ export const ExportPoster = React.forwardRef<HTMLDivElement, ExportPosterProps>(
                 if (!sourceNode || !targetNode) return null;
 
                 if (edge.type === "straight") {
-                  // Spouse connection
+                  // Spouse connection - dashed red line
                   const sourceRight =
                     sourceNode.position.x > targetNode.position.x;
                   const sx =
@@ -175,29 +175,28 @@ export const ExportPoster = React.forwardRef<HTMLDivElement, ExportPosterProps>(
                     <path
                       key={edge.id}
                       d={`M ${sx} ${sy} L ${tx} ${ty}`}
-                      stroke="#ec4899"
-                      strokeWidth="2"
+                      stroke="#ef4444"
+                      strokeWidth="3"
                       fill="none"
-                      strokeDasharray="5,5"
+                      strokeDasharray="8,4"
                     />
                   );
                 }
 
-                // Parent-child connection
+                // Parent-child connection - single orthogonal path (no curves)
                 const sx = sourceNode.position.x - offset.x + CARD_WIDTH / 2;
                 const sy = sourceNode.position.y - offset.y + CARD_HEIGHT;
                 const tx = targetNode.position.x - offset.x + CARD_WIDTH / 2;
                 const ty = targetNode.position.y - offset.y;
-                const d = `M ${sx},${sy} C ${sx},${sy + 60} ${tx},${
-                  ty - 60
-                } ${tx},${ty}`;
+                // Midpoint Y between parent bottom and child top
+                const my = Math.round((sy + ty) / 2);
 
                 return (
                   <path
                     key={edge.id}
-                    d={d}
-                    stroke="#9ca3af"
-                    strokeWidth="2"
+                    d={`M ${sx} ${sy} L ${sx} ${my} L ${tx} ${my} L ${tx} ${ty}`}
+                    stroke="#3b82f6"
+                    strokeWidth="3"
                     fill="none"
                   />
                 );
